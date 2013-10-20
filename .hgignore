@@ -2,3 +2,6 @@ syntax: glob
 walker/build/*
 .directory
 walker/.kdev4/*
+fat/build/*
+fat/tffs-lib/*
+fat/.kdev*
