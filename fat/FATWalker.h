@@ -18,17 +18,36 @@
 
 #pragma once
 
+#include <fstream>
 #include <string>
 
-class FATWalker
-{
+class FATWalker {       
+public:
+        typedef std::basic_string<uint8_t> bytes_t;
+       
+private:
+        enum Offset {
+                SECTOR_SIZE = 0x0B,
+                SECTORS_PER_CLUSTER = 0x0D, 
+                NUMBER_OF_TABLES = 0x010
+        };
+                
+        mutable std::ifstream device;
+        
         FATWalker() = delete;
         FATWalker(const FATWalker& other) = delete;
         FATWalker& operator=(const FATWalker& other) = delete;
         
-        
+        bytes_t read(Offset offset, size_t bytes_to_read) const;
 
 public:
         FATWalker(const std::string &device_name);
         virtual ~FATWalker();
+
+        uint16_t sector_size() const;
+        uint8_t sectors_per_cluster() const;
+
+        size_t cluster_size() const;
+        
+        uint8_t tables_count() const;
 };
