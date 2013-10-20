@@ -1,2 +1,4 @@
 syntax: glob
-buildd/*
+walker/build/*
+.directory
+walker/.kdev4/*
