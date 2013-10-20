@@ -4,7 +4,7 @@
 
 #include <cinttypes>
 
-const char *const USAGE = "Usage: crawler DEVICE [PHRASE]..";
+const char *const USAGE = "Usage: walker DEVICE [PHRASE]..";
 
 using namespace std;
 
