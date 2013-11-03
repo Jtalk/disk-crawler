@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "types.h"
+
 #include <fstream>
 #include <string>
 
@@ -29,8 +31,6 @@ class DiskWalker {
         DiskWalker& operator =(const DiskWalker&) = delete;
         
 public:
-        typedef std::basic_string<uint8_t> byte_array_t;
-        
         DiskWalker(const std::string &device_name);
         
         size_t find(const byte_array_t &to_find);

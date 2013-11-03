@@ -1,5 +1,7 @@
 #include "DiskWalker.h"
 
+#include "types.h"
+
 #include <iostream>
 
 #include <cinttypes>
@@ -14,7 +16,7 @@ int main(int argc, char **argv) {
                 return 0;
         }
         
-        auto phrase(reinterpret_cast<DiskWalker::byte_array_t::pointer>(argv[2]));
+        auto phrase(reinterpret_cast<byte_array_t::pointer>(argv[2]));
         string filename(argv[1]);
         
         DiskWalker walker(filename);
@@ -24,7 +26,7 @@ int main(int argc, char **argv) {
                 return -1;
         }
         
-        if (walker.find(phrase) != DiskWalker::byte_array_t::npos)
+        if (walker.find(phrase) != byte_array_t::npos)
                 cout << "Found" << endl;
         else
                 cout << "Not found" << endl;

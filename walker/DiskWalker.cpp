@@ -34,7 +34,7 @@ bool DiskWalker::operator!() const
         return !this->file;
 }
 
-size_t DiskWalker::find(const DiskWalker::byte_array_t& to_find)
+size_t DiskWalker::find(const byte_array_t& to_find)
 {
         return utility::find(this->file, to_find);
 }
