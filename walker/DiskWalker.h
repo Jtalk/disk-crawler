@@ -21,9 +21,7 @@
 #include <fstream>
 #include <string>
 
-class DiskWalker {
-        static const size_t BUFFER_SIZE = 100000;
-        
+class DiskWalker {        
         std::ifstream file;
         
         DiskWalker() = delete;

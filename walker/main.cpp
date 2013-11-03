@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
                 return 0;
         }
         
-        DiskWalker::byte_array_t phrase(reinterpret_cast<DiskWalker::byte_array_t::pointer>(argv[2]));
+        auto phrase(reinterpret_cast<DiskWalker::byte_array_t::pointer>(argv[2]));
         string filename(argv[1]);
         
         DiskWalker walker(filename);
