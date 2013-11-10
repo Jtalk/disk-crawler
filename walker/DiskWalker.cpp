@@ -29,7 +29,7 @@ DiskWalker::DiskWalker(const std::string &device_name)
         this->file.open(device_name, ios_base::in | ios_base::binary);
 }
 
-bool DiskWalker::operator!() const
+bool DiskWalker::operator !() const
 {
         return !this->file;
 }

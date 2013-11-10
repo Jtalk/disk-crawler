@@ -40,21 +40,29 @@ void assert(bool expr, const std::string &message) {
 inline void assert(bool, const std::string&) {}
 #endif
 
+
+template<typename Target>
+Target to(const FATWalker::bytes_t &bytes) 
+{
+        Target value = *reinterpret_cast<const Target*>(&bytes[0]);
+        return value;
+}
+
+
 template<class Stream>
 size_t find(Stream &stream, const byte_array_t& to_find)
-{
-        static constexpr size_t BUFFER_SIZE = 100000;
-        
+{        
         if (!stream)
                 return byte_array_t::npos;
         
         long int buffers_overlap = to_find.size();
         
+        static constexpr size_t BUFFER_SIZE = 100000;
         byte_array_t buffer(BUFFER_SIZE, 0);
         
         while (!stream.eof() && stream.tellg() != -1) {
                 size_t pos = stream.tellg();
-                stream.read(reinterpret_cast<char*>(&buffer[0]), 100000); // Grabage checking is required
+                stream.read(&buffer[0], 100000); // Grabage checking is required
                 
                 size_t found_pos = buffer.find(to_find);
                 if (found_pos != byte_array_t::npos)

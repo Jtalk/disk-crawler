@@ -24,7 +24,7 @@
 #include <string>
 
 class DiskWalker {        
-        std::ifstream file;
+        std::basic_ifstream<uint8_t> file;
         
         DiskWalker() = delete;
         DiskWalker(const DiskWalker&) = delete;
