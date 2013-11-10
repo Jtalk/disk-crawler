@@ -18,29 +18,29 @@
 
 #pragma once
 
-#include "FSWalker.h"
+#include <fstream>
 
-class FATWalker : public FSWalker
-{       
-        enum Offset {
-                SECTOR_SIZE = 0x0B,
-                SECTORS_PER_CLUSTER = 0x0D, 
-                NUMBER_OF_TABLES = 0x010, 
-                NUMBER_OF_ROOT_DIRECTORY_ENTRIES = 0x011
-        };
-        
-        enum DirectoryEntryOffset {
-                FILE_NAME = 0x0, 
-                FILE_SIZE = 0x1c
-        };
-        
-        size_t data_offset() const;
-        
-protected:
-        virtual FSFileStream* traceback(size_t absolute_offset) const;
-        virtual possible_matches_t find_by_signatures() const;
-                
+class FSFileStream
+{
+        typedef std::basic_fstream<uint8_t> stream_t;
+
+        stream_t *const stream;
+        const FileSystem *const fs;
+
+        size_t chunk_num;
+        size_t chunk_pos;
+
+        size_t file_start_offset;
+
+        FSFileStream() = delete;
+        FSFileStream(const FSFileStream &other) = delete;
+    
 public:
-        FATWalker(const std::string &device_name);
-        virtual ~FATWalker();
+        FSFileStream(stream_t &file, const FileSystem &fs);
+        virtual ~FSFileStream();
+
+        size_t seekg(size_t offset);
+        size_t tellg();
+
+        size_t read(uint8_t *buffer, size_t size);
 };

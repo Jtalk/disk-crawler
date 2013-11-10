@@ -16,90 +16,56 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include "FATWalker.h"
+
+#include "FSFileStream.h"
 
 #include "utility.h"
 
-using namespace std;
-
-template<typename Target>
-Target to(const FATWalker::bytes_t &bytes) 
-{
-        Target value = *reinterpret_cast<const Target*>(&bytes[0]);
-        return value;
-}
+#include <algorithm>
 
 FATWalker::FATWalker(const string& device_name):
-        device(device_name, ios_base::in | ios_base::binary)
+        FSWalker(device_name)
 {}
 
 FATWalker::~FATWalker()
 {}
 
-FATWalker::bytes_t FATWalker::read(FATWalker::Offset offset, size_t bytes_to_read) const 
+static bool length_comparator(const byte_array_t &a, const byte_array_t &b)
 {
-        bytes_t buffer(bytes_to_read, 0);
+        return a.length() < b.length();
+}
+
+possible_matches_t FATWalker::find_by_signatures() const
+{
+        this->device.seekg(this->data_offset());
+        possible_matches_t matches;
         
-        this->device.seekg(static_cast<size_t>(offset));
-        this->device.read(reinterpret_cast<ifstream::char_type*>(&buffer[0]), bytes_to_read);
+        static constexpr size_t BUFFER_SIZE = 100000;
+        byte_array_t buffer(BUFFER_SIZE, 0);
+
+        size_t buffers_overlap = std::max_element(signatures.cbegin(), signatures.cend(), length_comparator)->length();
         
-        return buffer;
-}
-
-uint16_t FATWalker::sector_size() const 
-{
-        auto bytes = this->read(SECTOR_SIZE, 2);
-        return to<uint16_t>(bytes);
-}
-
-uint8_t FATWalker::sectors_per_cluster() const 
-{
-        auto bytes = this->read(SECTORS_PER_CLUSTER, 1);
-        return to<uint8_t>(bytes);;
-}
-
-size_t FATWalker::cluster_size() const 
-{
-        return this->sector_size() * this->sectors_per_cluster();
-}
-
-uint8_t FATWalker::tables_count() const 
-{
-        auto bytes = this->read(NUMBER_OF_TABLES, 1);
-        return to<uint8_t>(bytes);    
-}
-
-uint16_t FATWalker::root_entries_count() const 
-{
-        auto bytes = this->read(NUMBER_OF_ROOT_DIRECTORY_ENTRIES, 2);
-        return to<uint16_t>(bytes);        
-}
-
-uint32_t FATWalker::file_size(const std::vector< uint8_t >& dir_entry)
-{
-        constexpr size_t ENTRY_SIZE = 32;
-        
-        utility::assert(dir_entry.size() < ENTRY_SIZE, "Invalid directory entry size");
-        
-        return to<uint32_t>(&dir_entry[FILE_SIZE]);
-}
-
-void FATWalker::find(const byte_array_t& to_find, std::list<result_t> &found)
-{
-        auto found = this->find_by_signatures();
-        
-        for (auto &file : found) {
-                const bytes_t &file_data = this->traceback(file);
-                size_t pos = utility::find(byte_stream_t(file_data), to_find);
-                if (pos != bytes_t::npos) {
-                        found.push_back({file_data, pos});
+        while (!this->device.eof() && this->device.tellg() != -1) {
+                size_t pos = this->device.tellg();
+                
+                this->device.read(&buffer[0], 100000);
+                
+                for (auto &signature : signatures) {
+                        size_t found_pos = buffer.find(signature);
+                        if (found_pos != byte_array_t::npos)
+                                matches.push_front(pos + found_pos);
                 }
+                
+                this->device.seekg(this->device.tellg() - buffers_overlap);
+                
+                usleep(1000);
         }
+        
+        return matches;
 }
 
-
-bool FATWalker::operator!() const
+FSFileStream* FATWalker::traceback(size_t absolute_offset) const
 {
-        return !this->device;
+        return new FATFileStream(absolute_offset);
 }
