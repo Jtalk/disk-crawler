@@ -16,37 +16,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include "FSFileStream.h"
 
-#include <cmath>
-
-FSFileStream::FSFileStream(stream_t &stream, size_t absolute_offset, const FileSystem &fs):
-        stream(&stream),
-        fs(&fs),
-        chunk_num(0),
-        chunk_pos(0),
-        file_begin(0)
-{
-        this->file_begin = absolute_offset;
-}
+FSFileStream::FSFileStream(stream_t &stream):
+        stream(&stream)
+{}
 
 FSFileStream::~FSFileStream()
 {}
-
-size_t FSFileStream::tellg()
-{
-        return this->chunk_pos * fs->chunk_size() + this->chunk_pos;
-}
-
-size_t FSFileStream::seekg(size_t offset)
-{
-        this->chunk_pos = std::remquo(offset, fs->chunk_size(), &this->chunk_num);        
-}
-
-size_t FSFileStream::read(uint8_t* buffer, size_t size)
-{
-      size_t read = 0;
-      size_t chunk_reminded = fs->chunk_size() - this->chunk_pos;
-      size_t stream_offset = fs->offset()
-}

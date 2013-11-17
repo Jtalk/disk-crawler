@@ -25,22 +25,27 @@ class FSFileStream
         typedef std::basic_fstream<uint8_t> stream_t;
 
         stream_t *const stream;
-        const FileSystem *const fs;
-
-        size_t chunk_num;
-        size_t chunk_pos;
-
-        size_t file_start_offset;
-
+        
         FSFileStream() = delete;
         FSFileStream(const FSFileStream &other) = delete;
+        
+protected:
+        template<typename T>
+        T get(size_t offset) {
+                this->stream->seekg(offset);
+                T value;
+                this->stream->read(reinterpret_cast<stream_t::char_type*>(&value), sizeof(value) / sizeof(stream_t::char_type));
+                return value;
+        }
     
 public:
-        FSFileStream(stream_t &file, const FileSystem &fs);
+        FSFileStream(stream_t &stream);
         virtual ~FSFileStream();
+        
+        virtual size_t read(uint8_t *buffer, size_t size) = 0;
 
-        size_t seekg(size_t offset);
-        size_t tellg();
-
-        size_t read(uint8_t *buffer, size_t size);
+        virtual size_t seekg(size_t offset) = 0;
+        virtual size_t tellg() const = 0 ;
+        
+        virtual bool correct() const = 0;
 };
