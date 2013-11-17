@@ -22,6 +22,10 @@
 
 class FATFileStream : public FSFileStream
 {
+        struct FileEntry {
+                size_t size;
+        };
+        
         size_t cluster_size;
         
         size_t fat_offset;
@@ -30,14 +34,21 @@ class FATFileStream : public FSFileStream
         size_t data_offset;
         size_t data_size;
         
-        size_t cluster_num;
-        size_t cluster_pos;
+        size_t file_cluster_num;
+        size_t file_cluster_pos;
+        
+        size_t current_cluster_fat_index;
         
         bool is_correct;
+        FileEntry file_entry;
         
         FATFileStream() = delete;
         FATFileStream(const FATFileStream& other) = delete;
+        
         void init();
+        
+        void update_cluster();
+        FileEntry make_file_entry();
 
 public:
         FATFileStream(stream_t &stream, size_t absolute_offset);

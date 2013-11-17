@@ -31,6 +31,10 @@ enum FATOffsets : size_t {
         SECTORS_PER_FAT32 = 0x24
 };
 
+enum FATDirectoryOffsets : size_t {
+        SIZE_OFFSET = 0x1C
+};
+
 FATFileStream::FATFileStream(stream_t &stream, size_t absolute_offset)
         : FSFileStream(stream), is_correct(true)
 {
@@ -45,8 +49,11 @@ FATFileStream::FATFileStream(stream_t &stream, size_t absolute_offset)
         if (!this->correct())
                 return;
         
-        this->cluster_num = (absolute_offset - this->data_offset) / (this->cluster_size);
-        this->cluster_pos = 0;
+        this->current_cluster_fat_index = ;
+        
+        this->file_cluster_num = (absolute_offset - this->data_offset) / (this->cluster_size);
+        this->file_cluster_pos = 0;
+        this->file_entry = this->make_file_entry();
 }
 
 FATFileStream::~FATFileStream()
@@ -75,19 +82,48 @@ void FATFileStream::init()
         this->is_correct = this->stream->good();
 }
 
+void FATFileStream::update_cluster()
+{
+        
+}
+
+FATFileStream::FileEntry FATFileStream::make_file_entry()
+{
+        FileEntry entry;
+        
+        size_t offset = (?) + SIZE_OFFSET;
+        entry.size = this->get<uint32_t>(offset);
+        
+        return entry;
+}
+
 size_t FATFileStream::read(uint8_t* buffer, size_t size)
 {
-
+        size_t read = 0;
+        while(size > 0) {
+                size_t rest = this->cluster_size - this->file_cluster_pos;
+                size_t read = this->stream->read(buffer, rest);
+                
+                if (!this->stream->good())
+                        return read;
+                
+                size -= read;
+                buffer += read;
+                this->file_cluster_pos += read;
+                
+                if (this->file_cluster_pos >= this->cluster_size)
+                        this->update_cluster();
+        }
 }
 
 size_t FATFileStream::tellg() const
 {
-        return this->cluster_num * this->cluster_size + this->cluster_pos;
+        return this->file_cluster_num * this->cluster_size + this->file_cluster_pos;
 }
 
 size_t FATFileStream::seekg(size_t offset)
 {
-        this->cluster_pos = std::remquo(offset, this->cluster_size, &this->cluster_num);
+        this->file_cluster_pos = std::remquo(offset, this->cluster_size, &this->file_cluster_num);
 }
 
 bool FATFileStream::correct() const
