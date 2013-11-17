@@ -1,6 +1,6 @@
 project(fat)
 
-add_executable(fat FSWalker.cpp FSFileStream.cpp FATWalker.cpp main.cpp)
+add_executable(fat FATFileStream.cpp FSWalker.cpp FSFileStream.cpp FATWalker.cpp main.cpp)
 
 install(TARGETS fat RUNTIME DESTINATION bin)
 
