@@ -67,5 +67,9 @@ possible_matches_t FATWalker::find_by_signatures() const
 
 FSFileStream* FATWalker::traceback(size_t absolute_offset) const
 {
-        return new FATFileStream(absolute_offset);
+        auto stream = new FATFileStream(this->device, absolute_offset);
+        if (stream->correct())
+                return stream;
+        delete stream;
+        return nullptr;                
 }
