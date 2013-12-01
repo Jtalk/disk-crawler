@@ -18,13 +18,13 @@
 
 #include "FATWalker.h"
 
-#include "FSFileStream.h"
+#include "FATFileStream.h"
 
 #include "utility.h"
 
 #include <algorithm>
 
-FATWalker::FATWalker(const string& device_name):
+FATWalker::FATWalker(const std::string& device_name):
         FSWalker(device_name)
 {}
 
@@ -36,9 +36,8 @@ static bool length_comparator(const byte_array_t &a, const byte_array_t &b)
         return a.length() < b.length();
 }
 
-possible_matches_t FATWalker::find_by_signatures() const
+FATWalker::possible_matches_t FATWalker::find_by_signatures() const
 {
-        this->device.seekg(this->data_offset());
         possible_matches_t matches;
         
         static constexpr size_t BUFFER_SIZE = 100000;
@@ -57,7 +56,7 @@ possible_matches_t FATWalker::find_by_signatures() const
                                 matches.push_front(pos + found_pos);
                 }
                 
-                this->device.seekg(this->device.tellg() - buffers_overlap);
+                this->device.seekg(this->device.tellg() - FATFileStream::streampos(buffers_overlap));
                 
                 usleep(1000);
         }
@@ -67,7 +66,7 @@ possible_matches_t FATWalker::find_by_signatures() const
 
 FSFileStream* FATWalker::traceback(size_t absolute_offset) const
 {
-        auto stream = new FATFileStream(this->device, absolute_offset);
+        auto stream = new FATFileStream(this->device, FATFileStream::streampos(absolute_offset));
         if (stream->correct())
                 return stream;
         delete stream;

@@ -22,25 +22,30 @@
 
 class FATFileStream : public FSFileStream
 {
-        struct FileEntry {
-                size_t size;
+        struct FileInfo {
+                size_t file_cluster_num;
+                streampos file_cluster_pos;
+                streampos current_cluster_offset;
         };
         
-        size_t cluster_size;
-        
-        size_t fat_offset;
-        size_t fat_size;
-        
-        size_t data_offset;
-        size_t data_size;
-        
-        size_t file_cluster_num;
-        size_t file_cluster_pos;
-        
-        size_t current_cluster_fat_index;
+        struct DeviceInfo {
+                size_t cluster_size;
+                
+                streampos fat_offset;
+                size_t fat_size;
+                
+                streampos data_offset;
+                size_t data_clusters_count;
+                
+                size_t fat_entry_size;
+                size_t eoc;
+        };
+                
+        DeviceInfo device;        
+        FileInfo info;
         
         bool is_correct;
-        FileEntry file_entry;
+        bool is_eof;
         
         FATFileStream() = delete;
         FATFileStream(const FATFileStream& other) = delete;
@@ -48,16 +53,22 @@ class FATFileStream : public FSFileStream
         void init();
         
         void update_cluster();
-        FileEntry make_file_entry();
-
+        
+        streampos find_next_cluster();
+        size_t read_fat(streampos fat_entry_offset);
+        
+        size_t fat_type() const;
+        size_t eoc() const;
+        
 public:
-        FATFileStream(stream_t &stream, size_t absolute_offset);
+        FATFileStream(stream_t &stream, streampos absolute_offset);
         virtual ~FATFileStream();
         
-        virtual size_t read(uint8_t* buffer, size_t size);
+        virtual streampos read(uint8_t* buffer, streampos size) override;
         
-        virtual size_t seekg(size_t offset);
-        virtual size_t tellg() const;
+        virtual void seekg(streampos offset) override;
+        virtual streampos tellg() const override;
+        virtual bool eof() const override;
         
-        virtual bool correct() const;
+        virtual bool correct() const override;
 };

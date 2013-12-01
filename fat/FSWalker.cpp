@@ -19,7 +19,13 @@
 
 #include "FSWalker.h"
 
+#include "FSFileStream.h"
+
 #include "utility.h"
+
+const FSWalker::signatures_t FSWalker::signatures{
+        
+};
 
 FSWalker::FSWalker(const std::string &device_name):
         device(device_name, std::ios_base::binary)
@@ -28,7 +34,7 @@ FSWalker::FSWalker(const std::string &device_name):
 FSWalker::~FSWalker()
 {}
 
-results_t FSWalker::find(const byte_array_t& to_find)
+FSWalker::results_t FSWalker::find(const byte_array_t& to_find)
 {
         auto possible_matches = this->find_by_signatures();
         results_t found;
@@ -40,9 +46,9 @@ results_t FSWalker::find(const byte_array_t& to_find)
                         continue;
                 }
                 
-                size_t pos = utility::find(file_stream, to_find);
+                size_t pos = utility::find(*file_stream, to_find);
                 
-                if (pos != bytes_t::npos) {
+                if (pos != byte_array_t::npos) {
                         found.push_back({file_stream, pos});
                 }
                 else {

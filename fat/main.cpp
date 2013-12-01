@@ -23,12 +23,4 @@ int main(int argc, char **argv) {
                 return -1;
         }
         
-        cout << "Cluster size is " << (size_t)walker.cluster_size() << endl;
-        
-        cout << "Sector size is " << (size_t)walker.sector_size() << endl;
-        cout << "Sectors per cluster " << (size_t)walker.sectors_per_cluster() << endl;
-        
-        cout << "Number of tables " << (size_t)walker.tables_count() << endl;
-        
-        cout << "Number of FAT root directory entries " << (size_t)walker.root_entries_count() << endl;
 }

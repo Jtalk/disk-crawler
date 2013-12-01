@@ -24,3 +24,8 @@ FSFileStream::FSFileStream(stream_t &stream):
 
 FSFileStream::~FSFileStream()
 {}
+
+bool FSFileStream::operator!() const
+{
+        return this->correct();
+}

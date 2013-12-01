@@ -42,7 +42,7 @@ inline void assert(bool, const std::string&) {}
 
 
 template<typename Target>
-Target to(const FATWalker::bytes_t &bytes) 
+Target to(const byte_array_t &bytes) 
 {
         Target value = *reinterpret_cast<const Target*>(&bytes[0]);
         return value;
@@ -60,7 +60,7 @@ size_t find(Stream &stream, const byte_array_t& to_find)
         static constexpr size_t BUFFER_SIZE = 100000;
         byte_array_t buffer(BUFFER_SIZE, 0);
         
-        while (!stream.eof() && stream.tellg() != -1) {
+        while (!stream.eof() && stream.tellg() != typename Stream::streampos(-1)) {
                 size_t pos = stream.tellg();
                 stream.read(&buffer[0], 100000); // Grabage checking is required
                 
