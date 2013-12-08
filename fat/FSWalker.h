@@ -58,3 +58,8 @@ public:
         
         bool operator ! () const;
 };
+
+inline constexpr const uint8_t* operator "" _us (const char *s, size_t)
+{
+        return (const unsigned char *) s;
+}

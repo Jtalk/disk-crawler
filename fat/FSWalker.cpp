@@ -24,7 +24,7 @@
 #include "utility.h"
 
 const FSWalker::signatures_t FSWalker::signatures{
-        
+        "ZYX"_us
 };
 
 FSWalker::FSWalker(const std::string &device_name):
