@@ -48,7 +48,8 @@ FATWalker::possible_matches_t FATWalker::find_by_signatures() const
         while (!this->device.eof() && this->device.tellg() != -1) {
                 size_t pos = this->device.tellg();
                 
-                this->device.read(&buffer[0], 100000);
+                if (this->device.readsome(&buffer[0], 100000) < int64_t(buffers_overlap))
+                        break;
                 
                 for (auto &signature : signatures) {
                         size_t found_pos = buffer.find(signature);
