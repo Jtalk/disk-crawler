@@ -1,4 +1,5 @@
 #include "FATWalker.h"
+#include "FSFileStream.h"
 
 #include <iostream>
 
@@ -23,4 +24,17 @@ int main(int argc, char **argv) {
                 return -1;
         }
         
+        auto found = walker.find("XYZ"_us);      
+        if (found.empty()) {
+                cout << "Empty" << endl;
+                return 0;
+        }
+        
+        for (auto &iter : found)
+        {
+                uint8_t buffer[4] = {0};
+                iter.first->seekg(iter.second);
+                iter.first->read(buffer, 4);
+                cout << buffer << endl;
+        }
 }
