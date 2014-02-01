@@ -18,8 +18,8 @@
 
 #include "FSFileStream.h"
 
-FSFileStream::FSFileStream(stream_t &stream):
-        stream(&stream)
+FSFileStream::FSFileStream(FILE *stream):
+        stream(stream)
 {}
 
 FSFileStream::~FSFileStream()

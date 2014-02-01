@@ -18,32 +18,32 @@
 
 #pragma once
 
-#include <fstream>
+#include <cstdio>
+#include <cinttypes>
 
 class FSFileStream
 {
         FSFileStream() = delete;
         FSFileStream(const FSFileStream &other) = delete;
-        
-protected:
-        typedef std::basic_ifstream<uint8_t> stream_t;
-        
+                
 public:
-        typedef stream_t::streampos streampos;
+        typedef long int streampos;
         
 protected:
-        stream_t *const stream;
+        FILE *const stream;
         
         template<typename T>
         T get(streampos offset) const {
-                this->stream->seekg(offset);
+                fseek(this->stream, offset, SEEK_SET);
                 T value;
-                this->stream->read(reinterpret_cast<stream_t::char_type*>(&value), sizeof(value) / sizeof(stream_t::char_type));
+                fread(reinterpret_cast<void*>(&value), 1, sizeof(value), this->stream);
                 return value;
         }
     
+        virtual bool correct() const = 0;
+	
 public:
-        FSFileStream(stream_t &stream);
+        FSFileStream(FILE *stream);
         virtual ~FSFileStream();
         
         virtual streampos read(uint8_t *buffer, streampos size) = 0;
@@ -52,6 +52,4 @@ public:
         virtual streampos tellg() const = 0;
         virtual bool eof() const = 0;
         bool operator !() const;
-        
-        virtual bool correct() const = 0;
 };

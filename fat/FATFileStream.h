@@ -45,7 +45,6 @@ class FATFileStream : public FSFileStream
         FileInfo info;
         
         bool is_correct;
-        bool is_eof;
         
         FATFileStream() = delete;
         FATFileStream(const FATFileStream& other) = delete;
@@ -61,7 +60,7 @@ class FATFileStream : public FSFileStream
         size_t eoc() const;
         
 public:
-        FATFileStream(stream_t &stream, streampos absolute_offset);
+        FATFileStream(FILE *stream, streampos absolute_offset);
         virtual ~FATFileStream();
         
         virtual streampos read(uint8_t* buffer, streampos size) override;

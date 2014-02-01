@@ -20,6 +20,7 @@
 #include "FATFileStream.h"
 
 #include <cmath>
+#include <cstdlib>
 
 enum FATOffsets : size_t {
         SECTOR_SIZE = 0x0B,
@@ -37,7 +38,7 @@ enum FATDirectoryOffsets : size_t {
         SIZE_OFFSET = 0x1C
 };
 
-FATFileStream::FATFileStream(stream_t &stream, streampos absolute_offset)
+FATFileStream::FATFileStream(FILE *stream, streampos absolute_offset)
         : FSFileStream(stream), is_correct(true)
 {
         this->init();
@@ -45,8 +46,8 @@ FATFileStream::FATFileStream(stream_t &stream, streampos absolute_offset)
         if (!this->correct())
                 return;
         
-        this->stream->seekg(absolute_offset);
-        this->is_correct = (absolute_offset >= this->device.data_offset) && this->stream->good();
+        fseek(this->stream, absolute_offset, SEEK_SET);
+        this->is_correct = (absolute_offset >= this->device.data_offset) && !ferror(this->stream);
         
         if (!this->correct())
                 return;
@@ -114,7 +115,7 @@ void FATFileStream::init()
         this->device.fat_entry_size = this->fat_type();
         this->device.eoc = this->eoc();
         
-        this->is_correct = this->stream->good();
+        this->is_correct = !ferror(this->stream);
 }
 
 size_t FATFileStream::read_fat(streampos fat_entry_offset)
@@ -145,13 +146,13 @@ void FATFileStream::update_cluster()
         this->info.file_cluster_pos = std::remquo((double)this->info.file_cluster_pos, (double)this->device.cluster_size, &cluster_increment);
         for (int i = 0; i < cluster_increment; i++) {
                 auto next_offset = this->find_next_cluster();
-                this->is_eof = next_offset == streampos(-1);
-                if (this->eof())
+                bool is_eof = next_offset == streampos(-1);
+                if (is_eof)
                         return;
                 this->info.current_cluster_offset = next_offset;                
         }
         this->info.file_cluster_num += cluster_increment;
-        this->stream->seekg(this->info.current_cluster_offset + this->info.file_cluster_pos);
+        fseek(this->stream, this->info.current_cluster_offset + this->info.file_cluster_pos, SEEK_SET);
 }
 
 FATFileStream::streampos FATFileStream::read(uint8_t *buffer, streampos size)
@@ -159,9 +160,9 @@ FATFileStream::streampos FATFileStream::read(uint8_t *buffer, streampos size)
         size_t read = 0;
         while(size > 0) {
                 size_t rest = this->device.cluster_size - this->info.file_cluster_pos;
-                size_t read = this->stream->readsome(buffer, rest);
+                size_t read = fread(buffer, 1, rest, this->stream);
                 
-                if ((this->is_eof = !this->stream->good()))
+                if (this->eof())
                         break;
                 
                 size -= read;
@@ -183,7 +184,7 @@ FATFileStream::streampos FATFileStream::tellg() const
 
 bool FATFileStream::eof() const
 {
-        return this->is_eof;
+        return feof(this->stream);
 }
 
 void FATFileStream::seekg(streampos offset)

@@ -20,6 +20,8 @@
 
 #include "types.h"
 
+#include <unistd.h>
+
 #include <forward_list>
 #include <fstream>
 #include <list>
@@ -42,10 +44,11 @@ private:
 protected:
 	typedef std::forward_list<size_t> possible_matches_t;
 	typedef std::list<byte_array_t> signatures_t;
+	typedef FILE* device_t;
 	
 	static const signatures_t signatures;
 
-	mutable std::basic_ifstream<uint8_t> device;
+	mutable device_t device;
 
 	virtual FSFileStream *traceback(size_t absolute_offset) const = 0;
 	virtual possible_matches_t find_by_signatures() const = 0;

@@ -23,20 +23,28 @@
 
 #include "utility.h"
 
+#include <cstdio>
+
 const FSWalker::signatures_t FSWalker::signatures = {
 	"ZYX"_us
 };
 
-FSWalker::FSWalker(const std::string &device_name):
-	device(device_name, std::ios_base::binary)
-{}
+FSWalker::FSWalker(const std::string &device_name)
+{
+	this->device = fopen(device_name.c_str(), "rb");
+}
 
 FSWalker::~FSWalker()
-{}
+{
+	fclose(this->device);
+}
 
 FSWalker::results_t FSWalker::find(const byte_array_t& to_find)
 {
 	auto signature_matches = this->find_by_signatures();
+	
+	if (signature_matches.empty())
+		utility::log("No signatures detected");
 
 	results_t found;
 

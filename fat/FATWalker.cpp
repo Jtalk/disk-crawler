@@ -20,6 +20,7 @@
 
 #include "FATFileStream.h"
 
+#include "Buffer.h"
 #include "utility.h"
 
 #include <algorithm>
@@ -41,23 +42,27 @@ FATWalker::possible_matches_t FATWalker::find_by_signatures() const
         possible_matches_t matches;
         
         static const size_t BUFFER_OVERLAP = std::max_element(signatures.cbegin(), signatures.cend(), length_comparator)->length();
-        static const size_t BUFFER_SIZE = 100000;
+        static const size_t BUFFER_SIZE = 100000000;
 	
-        byte_array_t buffer(BUFFER_SIZE, 0);
+        Buffer buffer(BUFFER_SIZE);
 
-        while (!this->device.eof() && this->device.tellg() != -1) {
-                size_t pos = this->device.tellg();
+        while (!feof(this->device) && !ferror(this->device) && ftell(this->device) != -1) {
+                size_t pos = ftell(this->device);
                 
-                if (this->device.readsome(&buffer[0], 100000) < int64_t(BUFFER_OVERLAP))
-                        break;
-                
+		buffer.resize(BUFFER_SIZE);
+		auto read_bytes = fread(buffer.begin(), 1, BUFFER_SIZE, this->device);
+		buffer.resize(read_bytes);
+		
                 for (auto &signature : signatures) {
-                        size_t found_pos = buffer.find(signature);
-                        if (found_pos != byte_array_t::npos)
+                        size_t found_pos = utility::str_find(buffer, signature);
+                        if (found_pos != Buffer::npos)
                                 matches.push_front(pos + found_pos);
                 }
                 
-                this->device.seekg(this->device.tellg() - FATFileStream::streampos(BUFFER_OVERLAP));
+                if (feof(this->device) || ferror(this->device))
+			break;
+                
+		fseek(this->device, -BUFFER_OVERLAP, SEEK_CUR);
                 
                 usleep(1000);
         }

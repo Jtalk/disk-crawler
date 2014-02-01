@@ -44,8 +44,14 @@ void assert(bool expr, const std::string &message)
 
 	abort();
 }
+
+void log(const char *message)
+{
+	cout << message << endl;
+}
 #else
 inline void assert(bool, const std::string&) {}
+inline void log(const char *) {}
 #endif
 
 
@@ -55,13 +61,22 @@ inline Target to(const byte_array_t &bytes)
 	return *reinterpret_cast<const Target*>(&bytes[0]);
 }
 
+template<class T>
+size_t str_find(const T &string, const byte_array_t &substr)
+{
+	byte_array_t array(string.cbegin(), string.size());
+	
+	// TODO: Bayer-Moore
+	
+	return array.find(substr);
+}
 
 template<class Stream>
 size_t find(Stream &stream, const byte_array_t &to_find)
 {
-	static const size_t BUFFER_SIZE = 100000;
+	static const size_t BUFFER_SIZE = 100000000;
 	static const auto NO_POSITION = typename Stream::streampos(-1);
-	
+
 	if (!stream)
 		return byte_array_t::npos;
 
