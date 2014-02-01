@@ -23,12 +23,12 @@
 
 #include "utility.h"
 
-const FSWalker::signatures_t FSWalker::signatures{
-        "ZYX"_us
+const FSWalker::signatures_t FSWalker::signatures = {
+	"ZYX"_us
 };
 
 FSWalker::FSWalker(const std::string &device_name):
-        device(device_name, std::ios_base::binary)
+	device(device_name, std::ios_base::binary)
 {}
 
 FSWalker::~FSWalker()
@@ -36,31 +36,31 @@ FSWalker::~FSWalker()
 
 FSWalker::results_t FSWalker::find(const byte_array_t& to_find)
 {
-        auto possible_matches = this->find_by_signatures();
-        results_t found;
-        
-        for (auto &match : possible_matches) {
-                FSFileStream *file_stream = this->traceback(match);
-                
-                if (file_stream == nullptr) {
-                        continue;
-                }
-                
-                size_t pos = utility::find(*file_stream, to_find);
-                
-                if (pos != byte_array_t::npos) {
-                        found.push_back({file_stream, pos});
-                }
-                else {
-                        delete file_stream;
-                }
-        }
-        
-        return found;
+	auto signature_matches = this->find_by_signatures();
+
+	results_t found;
+
+	for (auto & match : signature_matches) {
+		FSFileStream *file_stream = this->traceback(match);
+
+		if (file_stream == nullptr) {
+			continue;
+		}
+
+		size_t pos = utility::find(*file_stream, to_find);
+
+		if (pos != byte_array_t::npos) {
+			found.push_back({file_stream, pos});
+		} else {
+			delete file_stream;
+		}
+	}
+
+	return found;
 }
 
 bool FSWalker::operator !() const
 {
-        return !this->device;
+	return !this->device;
 }
 

@@ -40,15 +40,15 @@ FATWalker::possible_matches_t FATWalker::find_by_signatures() const
 {
         possible_matches_t matches;
         
-        static constexpr size_t BUFFER_SIZE = 100000;
+        static const size_t BUFFER_OVERLAP = std::max_element(signatures.cbegin(), signatures.cend(), length_comparator)->length();
+        static const size_t BUFFER_SIZE = 100000;
+	
         byte_array_t buffer(BUFFER_SIZE, 0);
 
-        size_t buffers_overlap = std::max_element(signatures.cbegin(), signatures.cend(), length_comparator)->length();
-        
         while (!this->device.eof() && this->device.tellg() != -1) {
                 size_t pos = this->device.tellg();
                 
-                if (this->device.readsome(&buffer[0], 100000) < int64_t(buffers_overlap))
+                if (this->device.readsome(&buffer[0], 100000) < int64_t(BUFFER_OVERLAP))
                         break;
                 
                 for (auto &signature : signatures) {
@@ -57,7 +57,7 @@ FATWalker::possible_matches_t FATWalker::find_by_signatures() const
                                 matches.push_front(pos + found_pos);
                 }
                 
-                this->device.seekg(this->device.tellg() - FATFileStream::streampos(buffers_overlap));
+                this->device.seekg(this->device.tellg() - FATFileStream::streampos(BUFFER_OVERLAP));
                 
                 usleep(1000);
         }

@@ -31,35 +31,35 @@ class FSFileStream;
 class FSWalker
 {
 public:
-        typedef std::pair<FSFileStream*, size_t> result_t;
-        typedef std::list<result_t> results_t;
-        
+	typedef std::pair<FSFileStream*, size_t> result_t;
+	typedef std::list<result_t> results_t;
+
 private:
-        FSWalker() = delete;
-        FSWalker(const FSWalker& other) = delete;
-        virtual FSWalker& operator=(const FSWalker& other) = delete;        
-        
+	FSWalker() = delete;
+	FSWalker(const FSWalker& other) = delete;
+	virtual FSWalker& operator=(const FSWalker& other) = delete;
+
 protected:
-        typedef std::forward_list<size_t> possible_matches_t;
-        
-        typedef std::list<byte_array_t> signatures_t;
-        static const signatures_t signatures;
-        
-        mutable std::basic_ifstream<uint8_t> device;
-        
-        virtual FSFileStream *traceback(size_t absolute_offset) const = 0;
-        virtual possible_matches_t find_by_signatures() const = 0;
-        
+	typedef std::forward_list<size_t> possible_matches_t;
+	typedef std::list<byte_array_t> signatures_t;
+	
+	static const signatures_t signatures;
+
+	mutable std::basic_ifstream<uint8_t> device;
+
+	virtual FSFileStream *traceback(size_t absolute_offset) const = 0;
+	virtual possible_matches_t find_by_signatures() const = 0;
+
 public:
-        FSWalker(const std::string &device_name);
-        virtual ~FSWalker();
-        
-        results_t find(const byte_array_t &to_find);
-        
-        bool operator ! () const;
+	FSWalker(const std::string &device_name);
+	virtual ~FSWalker();
+
+	results_t find(const byte_array_t &to_find);
+
+	bool operator !() const;
 };
 
-inline constexpr const uint8_t* operator "" _us (const char *s, size_t)
+inline constexpr const uint8_t* operator "" _us(const char *s, size_t)
 {
-        return (const unsigned char *) s;
+	return (const uint8_t*) s;
 }
