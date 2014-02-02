@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "Buffer.h"
+
 #include "types.h"
 
 #include <unistd.h>
@@ -45,13 +47,13 @@ void assert(bool expr, const std::string &message)
 	abort();
 }
 
-void log(const char *message)
+void log(const std;:string &message)
 {
 	cout << message << endl;
 }
 #else
 inline void assert(bool, const std::string&) {}
-inline void log(const char *) {}
+inline void log(const std::string&) {}
 #endif
 
 
@@ -61,8 +63,7 @@ inline Target to(const byte_array_t &bytes)
 	return *reinterpret_cast<const Target*>(&bytes[0]);
 }
 
-template<class T>
-size_t str_find(const T &string, const byte_array_t &substr)
+static size_t str_find(const Buffer &string, const byte_array_t &substr)
 {
 	byte_array_t array(string.cbegin(), string.size());
 	
@@ -82,14 +83,17 @@ size_t find(Stream &stream, const byte_array_t &to_find)
 
 	long int buffers_overlap = to_find.size();
 
-	byte_array_t buffer(BUFFER_SIZE, 0);
+	Buffer buffer(BUFFER_SIZE);
 
 
 	while (!stream.eof() && stream.tellg() != NO_POSITION) {
 		size_t pos = stream.tellg();
-		stream.read(&buffer[0], 100000); // Grabage checking is required
-
-		size_t found_pos = buffer.find(to_find);
+		
+		buffer.resize(BUFFER_SIZE);
+		auto read = stream.read(buffer.begin(), buffer.size());
+		buffer.resize(read);
+		
+		size_t found_pos = str_find(buffer, to_find);
 
 		if (found_pos != byte_array_t::npos)
 			return pos + found_pos;
