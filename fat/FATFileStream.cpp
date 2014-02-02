@@ -53,13 +53,11 @@ FATFileStream::FATFileStream(FILE *stream, streampos absolute_offset)
                 return;
         
         int64_t data_offset = absolute_offset - this->device.data_offset;
-        if (data_offset < 0)
-                abort();
         
-        this->info.current_cluster_offset = absolute_offset - streampos(data_offset % this->device.cluster_size);
-        
-        this->info.file_cluster_num = (absolute_offset - this->device.data_offset) / (this->device.cluster_size);
+        this->info.file_cluster_num = data_offset / this->device.cluster_size;
         this->info.file_cluster_pos = 0;
+	
+        this->info.current_cluster_offset = this->device.cluster_size * this->info.file_cluster_num;
 }
 
 FATFileStream::~FATFileStream()
