@@ -27,5 +27,5 @@ FSFileStream::~FSFileStream()
 
 bool FSFileStream::operator!() const
 {
-        return this->correct();
+        return !this->correct();
 }
