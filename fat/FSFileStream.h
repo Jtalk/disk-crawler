@@ -27,7 +27,9 @@ class FSFileStream
         FSFileStream(const FSFileStream &other) = delete;
                 
 public:
-        typedef long int streampos;
+        typedef size_t streampos;
+	
+	static const streampos npos = streampos(-1);
         
 protected:
         FILE *const stream;

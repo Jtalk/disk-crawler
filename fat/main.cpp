@@ -18,7 +18,7 @@ enum Status {
 
 void output(const FSWalker::results_t &results, size_t chunk_size)
 {
-	uint8_t *buffer = (uint8_t*)alloca(chunk_size);
+	uint8_t *buffer = (uint8_t*)alloca(chunk_size + 1);
 
 	for (auto & result : results) {
 
@@ -27,8 +27,9 @@ void output(const FSWalker::results_t &results, size_t chunk_size)
 
 		reader->seekg(pos);
 		reader->read(buffer, chunk_size);
+		buffer[chunk_size] = 0;
 		
-		cout << buffer << endl;
+		cout << (char*)buffer << endl;
 	}
 }
 
@@ -54,6 +55,8 @@ int main(int argc, char **argv)
 		cout << "Not found" << endl;
 		return NOT_FOUND;
 	}
+	
+	cout << "Found " << found.size() << " matches!" << endl;
 
 	output(found, sizeof("XYZ"_us));
 

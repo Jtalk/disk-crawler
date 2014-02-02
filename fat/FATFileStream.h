@@ -39,12 +39,16 @@ class FATFileStream : public FSFileStream
                 
                 size_t fat_entry_size;
                 size_t eoc;
+		
+		size_t total_sectors;
+		size_t size;
         };
                 
         DeviceInfo device;        
         FileInfo info;
         
         bool is_correct;
+	bool is_eof;
         
         FATFileStream() = delete;
         FATFileStream(const FATFileStream& other) = delete;

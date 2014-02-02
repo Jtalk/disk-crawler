@@ -30,8 +30,6 @@
 #include <cstdlib>
 
 static const int PAUSE_DURATIION_MSEC = 1;
-static const int MICROSECOND = 1000;
-static const int PAUSE_DURATION = PAUSE_DURATIION_MSEC * MICROSECOND;
 
 namespace utility
 {
@@ -47,7 +45,7 @@ void assert(bool expr, const std::string &message)
 	abort();
 }
 
-void log(const std;:string &message)
+void log(const std; : string &message)
 {
 	cout << message << endl;
 }
@@ -66,9 +64,9 @@ inline Target to(const byte_array_t &bytes)
 static size_t str_find(const Buffer &string, const byte_array_t &substr)
 {
 	byte_array_t array(string.cbegin(), string.size());
-	
+
 	// TODO: Bayer-Moore
-	
+
 	return array.find(substr);
 }
 
@@ -76,34 +74,38 @@ template<class Stream>
 size_t find(Stream &stream, const byte_array_t &to_find)
 {
 	static const size_t BUFFER_SIZE = 100000000;
-	static const auto NO_POSITION = typename Stream::streampos(-1);
 
 	if (!stream)
-		return byte_array_t::npos;
+		return Stream::npos;
 
 	long int buffers_overlap = to_find.size();
 
 	Buffer buffer(BUFFER_SIZE);
 
 
-	while (!stream.eof() && stream.tellg() != NO_POSITION) {
-		size_t pos = stream.tellg();
-		
+	while (!stream.eof() && stream.tellg() != Stream::npos) {
+		auto pos = stream.tellg();
+
 		buffer.resize(BUFFER_SIZE);
 		auto read = stream.read(buffer.begin(), buffer.size());
 		buffer.resize(read);
-		
-		size_t found_pos = str_find(buffer, to_find);
 
-		if (found_pos != byte_array_t::npos)
+		auto found_pos = str_find(buffer, to_find);
+
+		if (found_pos != Stream::npos) {
 			return pos + found_pos;
+		}
+
+		if (stream.eof()) {
+			break;
+		}
 
 		stream.seekg(stream.tellg() - buffers_overlap);
 
 		usleep(PAUSE_DURATIION_MSEC);
 	}
 
-	return byte_array_t::npos;
+	return Stream::npos;
 }
 
 }
