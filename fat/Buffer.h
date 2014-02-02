@@ -51,7 +51,7 @@ public:
 	void resize(size_t size) {
 		this->length = size;
 		
-		if (this->real_length < size) {
+		if (this->real_length < this->length) {
 			this->reallocate(size);
 		}			
 	}
