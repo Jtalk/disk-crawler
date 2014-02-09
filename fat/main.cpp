@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include <cinttypes>
+#include <cstring>
 
 const char *const USAGE = "Usage: fat DEVICE";
 
@@ -58,7 +59,7 @@ int main(int argc, char **argv)
 	
 	cout << "Found " << found.size() << " matches!" << endl;
 
-	output(found, sizeof("meanwhile"_us));
+	output(found, strlen((const char*)"meanwhileeee"_us));
 
 	return SUCCESS;
 }
