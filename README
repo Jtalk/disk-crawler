@@ -1,3 +1,2 @@
 TODO:
-	Proper tellg and seekg methods for FATFileStream.
 	Take care of an improper device size (when file system structures just do not fit).
