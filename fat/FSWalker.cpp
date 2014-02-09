@@ -26,7 +26,7 @@
 #include <cstdio>
 
 const FSWalker::signatures_t FSWalker::signatures = {
-	"ZYX"_us
+	"meanwhile"_us
 };
 
 FSWalker::FSWalker(const std::string &device_name)

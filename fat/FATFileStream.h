@@ -18,16 +18,12 @@
 
 #pragma once
 
-#include <fat/FSFileStream.h>
+#include "fat/FSFileStream.h"
+
+#include <deque>
 
 class FATFileStream : public FSFileStream
 {
-        struct FileInfo {
-                size_t file_cluster_num;
-                streampos file_cluster_pos;
-                streampos current_cluster_offset;
-        };
-        
         struct DeviceInfo {
                 size_t cluster_size;
                 
@@ -44,8 +40,11 @@ class FATFileStream : public FSFileStream
 		size_t size;
         };
                 
-        DeviceInfo device;        
-        FileInfo info;
+        DeviceInfo device;
+	
+	std::deque<streampos> clusters;
+	streampos current_pos;
+	size_t file_size;
         
         bool is_correct;
 	bool is_eof;
@@ -54,10 +53,10 @@ class FATFileStream : public FSFileStream
         FATFileStream(const FATFileStream& other) = delete;
         
         void init();
+	void init_clusters(streampos file_offset);
+        streampos find_next_cluster(streampos source_cluster);
+        void update_cluster(streampos file_pos);
         
-        void update_cluster();
-        
-        streampos find_next_cluster();
         size_t read_fat(streampos fat_entry_offset);
         
         size_t fat_type() const;

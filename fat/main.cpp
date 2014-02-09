@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 		return ACCESS_DENIED;
 	}
 
-	auto found = walker.find("XYZ"_us);
+	auto found = walker.find("meanwhile"_us);
 
 	if (found.empty()) {
 		cout << "Not found" << endl;
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
 	
 	cout << "Found " << found.size() << " matches!" << endl;
 
-	output(found, sizeof("XYZ"_us));
+	output(found, sizeof("meanwhile"_us));
 
 	return SUCCESS;
 }
