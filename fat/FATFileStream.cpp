@@ -181,6 +181,10 @@ void FATFileStream::update_cluster(streampos file_pos)
 	streampos cluster_num = file_pos / this->device.cluster_size;
 	streampos cluster_offset = file_pos % this->device.cluster_size;
 
+	this->is_eof = cluster_num >= this->clusters.size();
+	if (this->eof())
+		return;
+	
 	streampos offset = this->clusters[cluster_num] + cluster_offset;
 
 	fseek(this->stream, offset, SEEK_SET);

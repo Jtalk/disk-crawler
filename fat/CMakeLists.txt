@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(fat)
 
-add_executable(fat PlainDecoder.cpp BaseDecoder.cpp FATFileStream.cpp FSWalker.cpp FSFileStream.cpp FATWalker.cpp main.cpp)
+add_executable(fat ZipDecoder.cpp PlainDecoder.cpp BaseDecoder.cpp FATFileStream.cpp FSWalker.cpp FSFileStream.cpp FATWalker.cpp main.cpp)
 
 install(TARGETS fat RUNTIME DESTINATION bin)
 # 
