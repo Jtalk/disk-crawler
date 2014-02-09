@@ -28,18 +28,23 @@
 #include <string>
 #include <utility>
 
+class BaseDecoder;
 class FSFileStream;
 
 class FSWalker
 {
 public:
-	typedef std::pair<FSFileStream*, size_t> result_t;
+	typedef std::pair<BaseDecoder*, size_t> result_t;
 	typedef std::list<result_t> results_t;
+	typedef std::forward_list<BaseDecoder*> decoders_t;
 
 private:
 	FSWalker() = delete;
 	FSWalker(const FSWalker& other) = delete;
 	virtual FSWalker& operator=(const FSWalker& other) = delete;
+	
+	results_t find(FSFileStream *stream, const byte_array_t &to_find);
+	decoders_t decode(FSFileStream *stream);
 
 protected:
 	typedef std::forward_list<size_t> possible_matches_t;

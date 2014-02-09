@@ -81,7 +81,7 @@ size_t find(Stream &stream, const byte_array_t &to_find)
 	long int buffers_overlap = to_find.size();
 
 	Buffer buffer(BUFFER_SIZE);
-
+	stream.seekg(0);
 
 	while (!stream.eof() && stream.tellg() != Stream::npos) {
 		auto pos = stream.tellg();

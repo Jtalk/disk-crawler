@@ -20,6 +20,8 @@
 #include "FSWalker.h"
 
 #include "FSFileStream.h"
+#include "BaseDecoder.h"
+#include "PlainDecoder.h"
 
 #include "utility.h"
 
@@ -39,29 +41,52 @@ FSWalker::~FSWalker()
 	fclose(this->device);
 }
 
+FSWalker::decoders_t FSWalker::decode(FSFileStream* stream)
+{
+	decoders_t decoders;
+	BaseDecoder::stream_t to_decode(stream);
+	
+	decoders.push_front(new PlainDecoder(to_decode));
+	
+	return decoders;
+}
+
+FSWalker::results_t FSWalker::find(FSFileStream *stream, const byte_array_t &to_find)
+{
+	auto &&decoders = this->decode(stream);
+	
+	results_t results;
+	
+	for (auto &decoder : decoders)
+	{
+		auto found = utility::find(*decoder, to_find);
+		
+		if (found != BaseDecoder::npos)
+			results.emplace_front(decoder, found);
+		else 
+			delete decoder;
+	}
+	
+	return results;
+}
+
 FSWalker::results_t FSWalker::find(const byte_array_t& to_find)
 {
 	auto signature_matches = this->find_by_signatures();
-	
+
 	if (signature_matches.empty())
 		utility::log("No signatures detected");
 
 	results_t found;
 
 	for (auto & match : signature_matches) {
-		FSFileStream *file_stream = this->traceback(match);
+		auto file_stream = this->traceback(match);
 
 		if (file_stream == nullptr) {
 			continue;
 		}
 
-		size_t pos = utility::find(*file_stream, to_find);
-
-		if (pos != byte_array_t::npos) {
-			found.push_back({file_stream, pos});
-		} else {
-			delete file_stream;
-		}
+		found.splice(found.end(), this->find(file_stream, to_find));
 	}
 
 	return found;
