@@ -31,6 +31,7 @@ class Buffer
 	void reallocate(size_t new_length){
 		free(this->buffer);
 		this->buffer = (uint8_t*)malloc(new_length);
+		this->real_length = new_length;
 	}
 
 public:
