@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "fat/FSFileStream.h"
+#include "base/FSFileStream.h"
 
 #include <deque>
 

@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include "BaseDecoder.h"
-#include "Buffer.h"
+#include "base/BaseDecoder.h"
+#include "base/Buffer.h"
 
 #include <archive.h>
 
