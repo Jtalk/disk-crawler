@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
-project(fat)
+project(crawler)
 
-add_executable(fat ZipDecoder.cpp PlainDecoder.cpp BaseDecoder.cpp FATFileStream.cpp FSWalker.cpp FSFileStream.cpp FATWalker.cpp main.cpp)
+add_executable(crawler ZipDecoder.cpp PlainDecoder.cpp BaseDecoder.cpp FATFileStream.cpp FSWalker.cpp FSFileStream.cpp FATWalker.cpp main.cpp)
 
-install(TARGETS fat RUNTIME DESTINATION bin)
+install(TARGETS crawler RUNTIME DESTINATION bin)
 # 
 # SET (CMAKE_C_COMPILER             "/usr/bin/clang")
 # SET (CMAKE_C_FLAGS                "-Wall -std=c11")
