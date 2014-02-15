@@ -31,20 +31,20 @@ public:
 	{
 		STREAM_INCORRECT = 0,
 		READ_ERROR,
-		
 	};
 
 private:
 	static const streampos BUFFER_SIZE = 100000000;
 	
-	archive *archive;
+	archive *archive_state;
 	
 	Buffer buffer;
-	streampos position;
 	
-	static size_t read_callback(archive *archive, void *data_raw, const void **buffer);
-	static int open_callback(archive *archive, void *data_raw);
-	static off_t skip_callback(archive *archive, void *data_raw, off_t request);
+	bool is_eof;
+	
+	static ssize_t read_callback(archive *archive_state, void *data_raw, const void **buffer);
+	static int open_callback(archive *archive_state, void *data_raw);
+	static off_t skip_callback(archive *archive_state, void *data_raw, off_t request);
 	
 public:	
 	ZipDecoder(const stream_t &stream);
