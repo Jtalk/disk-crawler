@@ -28,9 +28,16 @@
 
 #include <cstdio>
 
-const FSWalker::signatures_t FSWalker::signatures = {
-	"meanwhile"_us
-};
+const FSWalker::signatures_t FSWalker::signatures(FSWalker::make_signatures());
+
+FSWalker::signatures_t FSWalker::make_signatures()
+{
+	signatures_t signatures((size_t)MAX_SIGNATURE);
+	
+	signatures[ZIP] = {0x50, 0x4B};
+	
+	return std::move(signatures);
+}
 
 FSWalker::FSWalker(const std::string &device_name)
 {
@@ -42,33 +49,36 @@ FSWalker::~FSWalker()
 	fclose(this->device);
 }
 
-FSWalker::decoders_t FSWalker::decode(FSFileStream* stream)
+BaseDecoder* FSWalker::decode(FSFileStream* stream, SignatureType signature)
 {
-	decoders_t decoders;
 	BaseDecoder::stream_t to_decode(stream);
+
+	switch (signature) {
+	case ZIP:
+		return new ZipDecoder(to_decode);
+	case MAX_SIGNATURE:
+		break;
+	}
+
+	DEBUG_ASSERT(false, "Invalid signature ID %u in FSWalker::decode", signature);
 	
-	decoders.push_front(new ZipDecoder(to_decode));
-	
-	return decoders;
+	return nullptr;
 }
 
-FSWalker::results_t FSWalker::find(FSFileStream *stream, const byte_array_t &to_find)
+FSWalker::results_t&& FSWalker::find(FSFileStream *stream, SignatureType type, const byte_array_t &to_find)
 {
-	auto &&decoders = this->decode(stream);
-	
+	auto decoder = this->decode(stream, type);
+
 	results_t results;
-	
-	for (auto &decoder : decoders)
-	{
-		auto found = utility::find(*decoder, to_find);
-		
-		if (found != BaseDecoder::npos)
-			results.emplace_front(decoder, found);
-		else 
-			delete decoder;
-	}
-	
-	return results;
+
+	auto found = utility::find(*decoder, to_find);
+
+	if (found != BaseDecoder::npos)
+		results.emplace_front(decoder, found);
+	else
+		delete decoder;
+
+	return std::move(results);
 }
 
 FSWalker::results_t FSWalker::find(const byte_array_t& to_find)
@@ -81,13 +91,13 @@ FSWalker::results_t FSWalker::find(const byte_array_t& to_find)
 	results_t found;
 
 	for (auto & match : signature_matches) {
-		auto file_stream = this->traceback(match);
+		auto file_stream = this->traceback(match.offset);
 
 		if (file_stream == nullptr) {
 			continue;
 		}
 
-		found.splice(found.end(), this->find(file_stream, to_find));
+		found.splice(found.end(), this->find(file_stream, match.signature, to_find));
 	}
 
 	return found;

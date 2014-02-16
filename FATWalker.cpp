@@ -54,10 +54,10 @@ FATWalker::possible_matches_t FATWalker::find_by_signatures() const
 		auto read_bytes = fread(buffer.begin(), 1, BUFFER_SIZE, this->device);
 		buffer.resize(read_bytes);
 		
-                for (auto &signature : signatures) {
-                        size_t found_pos = utility::str_find(buffer, signature);
+                for (size_t signature = 0; signature < MAX_SIGNATURE; signature++) {
+                        size_t found_pos = utility::str_find(buffer, signatures[signature]);
                         if (found_pos != Buffer::npos)
-                                matches.push_front(pos + found_pos);
+                                matches.push_front({pos + found_pos, (SignatureType)signature});
                 }
                 
                 if (feof(this->device) || ferror(this->device))

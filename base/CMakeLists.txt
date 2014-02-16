@@ -7,4 +7,14 @@ set (CRAWLERBASE_SOURCES
   PlainDecoder.cpp 
 )
 
-add_library(crawlerbase  ${CRAWLERBASE_SOURCES})
+set (CRAWLERBASE_HEADERS 
+  utility.h
+  Buffer.h
+  BaseDecoder.h
+  FSWalker.h 
+  FSFileStream.h
+  ZipDecoder.h 
+  PlainDecoder.h 
+)
+
+add_library(crawlerbase  ${CRAWLERBASE_SOURCES} ${CRAWLERBASE_HEADERS})

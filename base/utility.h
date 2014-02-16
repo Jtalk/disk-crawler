@@ -35,7 +35,7 @@ static const int PAUSE_DURATIION_MSEC = 1;
 	if (!EXPR) { \
 		printf(FORMAT, __VA_ARGS__); \
 	} \
-	(void)
+	abort()
 	
 #ifndef DEBUG
 #define DEBUG_ASSERT(EXPR, FORMAT, ...) 

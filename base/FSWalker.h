@@ -26,6 +26,7 @@
 #include <fstream>
 #include <list>
 #include <string>
+#include <vector>
 #include <utility>
 
 class BaseDecoder;
@@ -36,21 +37,23 @@ class FSWalker
 public:
 	typedef std::pair<BaseDecoder*, size_t> result_t;
 	typedef std::list<result_t> results_t;
-	typedef std::forward_list<BaseDecoder*> decoders_t;
-
-private:
-	FSWalker() = delete;
-	FSWalker(const FSWalker& other) = delete;
-	virtual FSWalker& operator=(const FSWalker& other) = delete;
-	
-	results_t find(FSFileStream *stream, const byte_array_t &to_find);
-	decoders_t decode(FSFileStream *stream);
 
 protected:
-	typedef std::forward_list<size_t> possible_matches_t;
-	typedef std::list<byte_array_t> signatures_t;
+	enum SignatureType {
+		ZIP = 0,
+
+		MAX_SIGNATURE
+	};
+
+	struct PossibleMatch {
+		size_t offset;
+		SignatureType signature;
+	};
+
+	typedef std::forward_list<PossibleMatch> possible_matches_t;
+	typedef std::vector<byte_array_t> signatures_t;
 	typedef FILE* device_t;
-	
+
 	static const signatures_t signatures;
 
 	mutable device_t device;
@@ -58,7 +61,17 @@ protected:
 	virtual FSFileStream *traceback(size_t absolute_offset) const = 0;
 	virtual possible_matches_t find_by_signatures() const = 0;
 
+private:
+	FSWalker() = delete;
+	FSWalker(const FSWalker& other) = delete;
+	virtual FSWalker& operator=(const FSWalker& other) = delete;
+
+	results_t && find(FSFileStream *stream, SignatureType type, const byte_array_t &to_find);
+	BaseDecoder* decode(FSFileStream* stream, SignatureType signature);
+
 public:
+	static signatures_t make_signatures();
+
 	FSWalker(const std::string &device_name);
 	virtual ~FSWalker();
 
