@@ -87,7 +87,7 @@ size_t find(Stream &stream, const byte_array_t &to_find)
 		auto pos = stream.tellg();
 
 		buffer.resize(BUFFER_SIZE);
-		auto read = stream.read(buffer.begin(), buffer.size());
+		auto read = stream.read(buffer, buffer.size());
 		buffer.resize(read);
 
 		auto found_pos = str_find(buffer, to_find);
