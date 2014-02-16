@@ -37,7 +37,7 @@ FSWalker::FSWalker(const std::string &device_name)
 
 FSWalker::~FSWalker()
 {
-	if (!this->operator!()) {
+	if (this->device != nullptr) {
 		fclose(this->device);
 	}
 }
@@ -46,7 +46,7 @@ FSWalker::signatures_t && FSWalker::make_signatures()
 {
 	signatures_t signatures(MAX_SIGNATURE);
 
-	signatures[ZIP] = {0x50, 0x4B};
+	signatures[ZIP] = {0x50, 0x4B, 0x03, 0x04};
 
 	return std::move(signatures);
 }
