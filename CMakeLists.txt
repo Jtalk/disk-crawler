@@ -25,10 +25,11 @@ install(TARGETS crawler RUNTIME DESTINATION bin)
 # SET (CMAKE_OBJDUMP "/usr/bin/llvm-objdump")
 # SET (CMAKE_RANLIB  "/usr/bin/llvm-ranlib")
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -pedantic -pedantic-errors -Wall -Wextra -Werror -Wdeprecated -march=native -O0 -g ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-DTEST -std=c++11 -pedantic -pedantic-errors -Wall -Wextra -Werror -Wdeprecated -march=native -O0 -g ${CMAKE_CXX_FLAGS}")
 
 find_package(LibArchive)
 
-target_link_libraries(crawler archive)
+target_link_libraries(crawler ${LibArchive_LIBRARIES} cppunit)
 
 include_directories(..)
+add_subdirectory(test)

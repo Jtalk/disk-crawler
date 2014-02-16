@@ -21,6 +21,7 @@
 
 #include <cstdlib>
 #include <cstdint>
+#include <cstring>
 
 class Buffer
 {
@@ -55,6 +56,26 @@ public:
 		if (this->real_length < this->length) {
 			this->reallocate(size);
 		}			
+	}
+	
+	void capture(const uint8_t *read_buffer, size_t read) {
+		auto old_length = this->length;
+		this->resize(this->length + read);
+		memcpy(this->begin() + old_length, read_buffer, read);
+	}
+	
+	bool move_front(size_t offset, size_t count) {
+		if (offset + count > this->length) {
+			return false;
+		}
+		
+		memcpy(this->buffer, this->buffer + offset, count);
+		this->resize(count);
+		return true;
+	}
+	
+	void clear() {
+		this->resize(0);
 	}
 	
 	iterator begin() {

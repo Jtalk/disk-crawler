@@ -2,6 +2,8 @@
 
 #include "base/BaseDecoder.h"
 
+#include "test/Tests.h"
+
 #include <iostream>
 
 #include <cinttypes>
@@ -20,23 +22,24 @@ enum Status {
 
 void output(const FSWalker::results_t &results, size_t chunk_size)
 {
-	uint8_t *buffer = (uint8_t*)alloca(chunk_size + 1);
-
 	for (auto & result : results) {
 
 		auto &reader = result.first;
 		auto pos = result.second;
 
 		reader->seekg(pos);
+		Buffer buffer(chunk_size);
 		reader->read(buffer, chunk_size);
-		buffer[chunk_size] = 0;
+		buffer.begin()[chunk_size] = 0;
 		
-		cout << (char*)buffer << endl;
+		cout << (char*)buffer.begin() << endl;
 	}
 }
 
 int main(int argc, char **argv)
 {
+	run_tests();
+	
 	if (argc < 2) {
 		cout << USAGE << endl;
 		return NOT_ENOUGH_ARGUMENTS;
