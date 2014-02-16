@@ -42,13 +42,13 @@ FSWalker::~FSWalker()
 	}
 }
 
-FSWalker::signatures_t && FSWalker::make_signatures()
+FSWalker::signatures_t FSWalker::make_signatures()
 {
-	signatures_t signatures(MAX_SIGNATURE);
+	signatures_t new_signatures((size_t)MAX_SIGNATURE);
 
-	signatures[ZIP] = {0x50, 0x4B, 0x03, 0x04};
+	new_signatures[ZIP] = byte_array_t{0x4B, 0x50, 0x04, 0x03};
 
-	return std::move(signatures);
+	return new_signatures;
 }
 
 BaseDecoder* FSWalker::decode(FSFileStream* stream, SignatureType signature)
