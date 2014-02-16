@@ -19,13 +19,15 @@
 
 #include "ZipDecoder.h"
 
+#include "base/utility.h"
+
 ZipDecoder::ZipDecoder(const BaseDecoder::stream_t& stream):
-	BaseDecoder(stream), buffer(BUFFER_SIZE)
+	BaseDecoder(stream), buffer(BUFFER_SIZE), overlap_buffer(0)
 {
 	this->archive_state = archive_read_new();
 
 	archive_read_support_filter_all(this->archive_state);
-	archive_read_support_format_zip(this->archive_state);
+	archive_read_support_format_all(this->archive_state);
 
 	archive_read_open2(this->archive_state, this, open_callback, read_callback, skip_callback, nullptr);
 }
@@ -121,12 +123,20 @@ ZipDecoder::streampos ZipDecoder::read(Buffer &buffer, streampos size)
 
 void ZipDecoder::seekg(streampos offset)
 {
-	(void)offset;
+	DEBUG_ASSERT(offset < this->overlap_buffer_offset, "Seeking by an invalid offset is asked in ZipDecoder. Offset requested is %u, but current buffer offset is %u", offset, this->buffer_offset);
+	
+	streampos buffer_end = this->overlap_buffer_offset + this->overlap_buffer.size();
+	(void)buffer_end;
+	DEBUG_ASSERT(buffer_end <= offset, "Seeking offset is increasing too fast in ZipDecoder. From %u to %u", buffer_end, offset);
+		
+	size_t in_buffer_offset = offset - this->overlap_buffer_offset;
+	size_t in_buffer_rest = this->overlap_buffer.size() - in_buffer_offset;
+	this->overlap_buffer.move_front(in_buffer_offset, in_buffer_rest);
 }
 
 ZipDecoder::streampos ZipDecoder::tellg() const
 {
-	return 0;
+	return this->overlap_buffer_offset + this->overlap_buffer.size();
 }
 
 bool ZipDecoder::eof() const

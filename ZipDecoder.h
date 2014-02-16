@@ -39,6 +39,9 @@ private:
 	
 	Buffer buffer;
 	
+	Buffer overlap_buffer;
+	streampos overlap_buffer_offset;
+	
 	bool is_eof;
 	
 	static ssize_t read_callback(archive *archive_state, void *data_raw, const void **buffer);
