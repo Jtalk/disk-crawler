@@ -34,6 +34,7 @@ public:
 
 private:
 	static const streampos BUFFER_SIZE = 100000000;
+	static const streampos BUFFER_OVERLAP = 1000;
 	
 	archive *archive_state;
 	
@@ -42,12 +43,16 @@ private:
 	Buffer overlap_buffer;
 	streampos overlap_buffer_offset;
 	
+	streampos offset;
+	
 	bool is_eof;
 	
 	static ssize_t read_callback(archive *archive_state, void *data_raw, const void **buffer);
 	static int open_callback(archive *archive_state, void *data_raw);
 	static off_t skip_callback(archive *archive_state, void *data_raw, off_t request);
 	
+	void take_overlap(Buffer &buffer);
+		
 public:	
 	ZipDecoder(const stream_t &stream);
 	virtual ~ZipDecoder();
