@@ -81,4 +81,11 @@ public:
 		CPPUNIT_ASSERT(buffer.move_front(SIZE, sizeof(text)));
 		CPPUNIT_ASSERT(not memcmp(buffer.begin(), text, sizeof(text)));
 	}
+	
+	void test_move_empty() {
+		const size_t SIZE = 10;
+		Buffer buffer(SIZE);
+		CPPUNIT_ASSERT(buffer.move_front(SIZE, 0);
+		CPPUNIT_ASSERT(buffer.size() == 0);
+	}
 };
