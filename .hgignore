@@ -1,3 +1,4 @@
 syntax: glob
 .directory
 build/*
+.kdev4/*
