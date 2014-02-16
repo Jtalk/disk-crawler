@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "Buffer.h"
 #include "FSFileStream.h"
 
 #include <memory>
@@ -40,7 +41,7 @@ public:
 	BaseDecoder(const stream_t &stream);
 	virtual ~BaseDecoder();
 
-	virtual streampos read(uint8_t *buffer, streampos size) = 0;
+	virtual streampos read(Buffer &buffer, streampos size) = 0;
 
 	virtual void seekg(streampos offset) = 0;
 	virtual streampos tellg() const = 0;
