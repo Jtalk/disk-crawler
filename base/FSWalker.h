@@ -70,7 +70,7 @@ private:
 	BaseDecoder* decode(FSFileStream* stream, SignatureType signature);
 
 public:
-	static signatures_t make_signatures();
+	static signatures_t && make_signatures();
 
 	FSWalker(const std::string &device_name);
 	virtual ~FSWalker();

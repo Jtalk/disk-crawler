@@ -42,12 +42,12 @@ FSWalker::~FSWalker()
 	}
 }
 
-FSWalker::signatures_t FSWalker::make_signatures()
+FSWalker::signatures_t && FSWalker::make_signatures()
 {
 	signatures_t signatures(MAX_SIGNATURE);
-	
+
 	signatures[ZIP] = {0x50, 0x4B};
-	
+
 	return std::move(signatures);
 }
 
@@ -58,16 +58,17 @@ BaseDecoder* FSWalker::decode(FSFileStream* stream, SignatureType signature)
 	switch (signature) {
 	case ZIP:
 		return new ZipDecoder(to_decode);
+
 	case MAX_SIGNATURE:
 		break;
 	}
 
 	DEBUG_ASSERT(false, "Invalid signature ID %u in FSWalker::decode", signature);
-	
+
 	return nullptr;
 }
 
-FSWalker::results_t&& FSWalker::find(FSFileStream *stream, SignatureType type, const byte_array_t &to_find)
+FSWalker::results_t && FSWalker::find(FSFileStream *stream, SignatureType type, const byte_array_t &to_find)
 {
 	auto decoder = this->decode(stream, type);
 
