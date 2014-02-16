@@ -30,15 +30,6 @@
 
 const FSWalker::signatures_t FSWalker::signatures(FSWalker::make_signatures());
 
-FSWalker::signatures_t FSWalker::make_signatures()
-{
-	signatures_t signatures((size_t)MAX_SIGNATURE);
-	
-	signatures[ZIP] = {0x50, 0x4B};
-	
-	return std::move(signatures);
-}
-
 FSWalker::FSWalker(const std::string &device_name)
 {
 	this->device = fopen(device_name.c_str(), "rb");
@@ -46,7 +37,18 @@ FSWalker::FSWalker(const std::string &device_name)
 
 FSWalker::~FSWalker()
 {
-	fclose(this->device);
+	if (!this->operator!()) {
+		fclose(this->device);
+	}
+}
+
+FSWalker::signatures_t FSWalker::make_signatures()
+{
+	signatures_t signatures(MAX_SIGNATURE);
+	
+	signatures[ZIP] = {0x50, 0x4B};
+	
+	return std::move(signatures);
 }
 
 BaseDecoder* FSWalker::decode(FSFileStream* stream, SignatureType signature)
