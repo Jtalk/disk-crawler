@@ -31,6 +31,19 @@
 
 static const int PAUSE_DURATIION_MSEC = 1;
 
+#define RELEASE_ASSERT(EXPR, FORMAT, ...) \
+	if (!EXPR) { \
+		printf(FORMAT, __VA_ARGS__); \
+	} \
+	(void)
+	
+#ifndef DEBUG
+#define DEBUG_ASSERT(EXPR, FORMAT, ...) 
+#else
+#define DEBUG_ASSERT(EXPR, FORMAT, ...) \
+	RELEASE_ASSERT(EXPR, FORMAT, __VA_ARGS__)
+#endif
+
 namespace utility
 {
 
