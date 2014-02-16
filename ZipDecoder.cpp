@@ -39,7 +39,7 @@ ssize_t ZipDecoder::read_callback(archive *archive_state, void *data_raw, const 
 {
 	auto data = (ZipDecoder*)data_raw;
 
-	if (!data->stream->operator!()) {
+	if (!*data->stream) {
 		archive_set_error(archive_state, ZipDecoder::READ_ERROR, "ZipDecoder is trying to read from an invalid object");
 		return -1;
 	}
@@ -76,17 +76,15 @@ off_t ZipDecoder::skip_callback(archive*, void* data_raw, off_t request)
 	data->stream->seekg(current + request);
 	auto new_off = data->stream->tellg();
 
-	if (new_off == npos)
-		return 0;
-
-	return new_off;
+	return new_off - current;
 }
 
-ZipDecoder::streampos ZipDecoder::read(uint8_t* buffer, streampos size)
+ZipDecoder::streampos ZipDecoder::read(Buffer &buffer, streampos size)
 {
 	if (this->eof())
 		return npos;
 	
+	buffer.clear();
 	archive_entry *entry;
 	streampos totally_read = 0;
 	int result;
@@ -95,30 +93,43 @@ ZipDecoder::streampos ZipDecoder::read(uint8_t* buffer, streampos size)
 		result = archive_read_next_header(this->archive_state, &entry);
 		
 		this->is_eof = (result == ARCHIVE_EOF);
-		if (this->eof())
+		
+		if (this->eof() or result != ARCHIVE_OK)
 			break;
 		
-		auto read = archive_read_data(this->archive_state, buffer + totally_read, size - totally_read);
-
-		if (read == 0)
-			break;
+		const uint8_t *read_buffer;
+		size_t read = 0;
+		int64_t offset;
 		
-		totally_read += read;
+		while (not archive_read_data_block(this->archive_state, (const void**)&read_buffer, &read, &offset)) {
+			if (read == 0) {
+				break;
+			}
+			
+			buffer.capture(read_buffer, read);
+			totally_read += read;
+			
+			if (totally_read >= size) {
+				break;
+			}
+		}
 		
-	} while (result == ARCHIVE_OK);
+	} while (totally_read < size);
 	
 	return totally_read;
 }
 
 void ZipDecoder::seekg(streampos offset)
 {
+	(void)offset;
 }
 
 ZipDecoder::streampos ZipDecoder::tellg() const
 {
+	return 0;
 }
 
 bool ZipDecoder::eof() const
 {
-	return this->is_eof;
+	return this->is_eof or this->stream->eof();
 }
