@@ -71,7 +71,7 @@ public:
 		char text[] = "abcdefghklmnopqrstuvwxyz";
 		buffer.capture((const uint8_t*)text, sizeof(text));
 		CPPUNIT_ASSERT(buffer.size() == sizeof(text) + SIZE);
-		CPPUNIT_ASSERT(not memcmp(buffer.begin() + SIZE, text, sizeof(text)));		
+		CPPUNIT_ASSERT(not memcmp(buffer.begin() + SIZE, text, sizeof(text)));
 	}
 	
 	void test_move() {

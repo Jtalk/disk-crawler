@@ -22,7 +22,7 @@
 #include "FSFileStream.h"
 #include "BaseDecoder.h"
 
-#include "../PlainDecoder.h"
+#include "ZipDecoder.h"
 
 #include "utility.h"
 
@@ -47,7 +47,7 @@ FSWalker::decoders_t FSWalker::decode(FSFileStream* stream)
 	decoders_t decoders;
 	BaseDecoder::stream_t to_decode(stream);
 	
-	decoders.push_front(new PlainDecoder(to_decode));
+	decoders.push_front(new ZipDecoder(to_decode));
 	
 	return decoders;
 }

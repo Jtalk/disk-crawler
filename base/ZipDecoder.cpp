@@ -19,7 +19,7 @@
 
 #include "ZipDecoder.h"
 
-#include "base/utility.h"
+#include "utility.h"
 
 ZipDecoder::ZipDecoder(const BaseDecoder::stream_t& stream):
 	BaseDecoder(stream), buffer(BUFFER_SIZE),

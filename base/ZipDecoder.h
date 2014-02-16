@@ -19,15 +19,45 @@
 
 #pragma once
 
-#include "base/BaseDecoder.h"
+#include "BaseDecoder.h"
 
-class PlainDecoder : public BaseDecoder
+#include <archive.h>
+
+class ZipDecoder : public BaseDecoder
 {
 public:
-	PlainDecoder(const stream_t &stream);
-	virtual ~PlainDecoder();
+	enum Error
+	{
+		STREAM_INCORRECT = 0,
+		READ_ERROR,
+	};
 
-	virtual streampos read(Buffer &buffer, streampos size) override;
+private:
+	static const streampos BUFFER_SIZE = 100000000;
+	static const streampos BUFFER_OVERLAP = 1000;
+	
+	archive *archive_state;
+	
+	Buffer buffer;
+	
+	Buffer overlap_buffer;
+	streampos overlap_buffer_offset;
+	
+	streampos offset;
+	
+	bool is_eof;
+	
+	static ssize_t read_callback(archive *archive_state, void *data_raw, const void **buffer);
+	static int open_callback(archive *archive_state, void *data_raw);
+	static off_t skip_callback(archive *archive_state, void *data_raw, off_t request);
+	
+	void take_overlap(Buffer &buffer);
+		
+public:	
+	ZipDecoder(const stream_t &stream);
+	virtual ~ZipDecoder();
+	
+	ZipDecoder::streampos read(Buffer &buffer, streampos size) override;
 	
 	virtual void seekg(streampos offset) override;
 	virtual streampos tellg() const override;

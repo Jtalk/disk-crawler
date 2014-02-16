@@ -1,9 +1,14 @@
 cmake_minimum_required(VERSION 2.8)
 project(crawler)
 
-add_library(crawl ZipDecoder.cpp PlainDecoder.cpp base/BaseDecoder.cpp FATFileStream.cpp base/FSWalker.cpp base/FSFileStream.cpp FATWalker.cpp )
+set (CMAKE_CXX_FLAGS "-std=c++11 -pedantic -pedantic-errors -Wall -Wextra -Werror -Wdeprecated -march=native -O0 -g ${CMAKE_CXX_FLAGS}")
+
+add_subdirectory(base)
+
+add_library(crawl FATFileStream.cpp FATWalker.cpp )
+
 find_package(LibArchive REQUIRED)
-target_link_libraries(crawl  ${LibArchive_LIBRARIES})
+target_link_libraries(crawl crawlerbase ${LibArchive_LIBRARIES})
 
 add_executable(crawler main.cpp)
 
@@ -29,7 +34,9 @@ install(TARGETS crawler RUNTIME DESTINATION bin)
 # SET (CMAKE_OBJDUMP "/usr/bin/llvm-objdump")
 # SET (CMAKE_RANLIB  "/usr/bin/llvm-ranlib")
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -pedantic -pedantic-errors -Wall -Wextra -Werror -Wdeprecated -march=native -O0 -g ${CMAKE_CXX_FLAGS}")
+set (CMAKE_CXX_FLAGS_DEBUG          "-g -O0")
+set (CMAKE_CXX_FLAGS_RELEASE        "-Ofast -DNDEBUG")
+set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-Ofast -g")
 
 target_link_libraries(crawler crawl)
 
