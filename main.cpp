@@ -2,8 +2,6 @@
 
 #include "base/BaseDecoder.h"
 
-#include "test/Tests.h"
-
 #include <iostream>
 
 #include <cinttypes>
@@ -38,8 +36,6 @@ void output(const FSWalker::results_t &results, size_t chunk_size)
 
 int main(int argc, char **argv)
 {
-	run_tests();
-	
 	if (argc < 2) {
 		cout << USAGE << endl;
 		return NOT_ENOUGH_ARGUMENTS;
