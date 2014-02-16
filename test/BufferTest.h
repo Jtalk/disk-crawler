@@ -34,6 +34,7 @@ class BufferTest : public CppUnit::TestFixture
 	CPPUNIT_TEST(test_capture_overflow);
 	CPPUNIT_TEST(test_capture_offset);
 	CPPUNIT_TEST(test_move);
+	CPPUNIT_TEST(test_move_empty);
 	CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -85,7 +86,7 @@ public:
 	void test_move_empty() {
 		const size_t SIZE = 10;
 		Buffer buffer(SIZE);
-		CPPUNIT_ASSERT(buffer.move_front(SIZE, 0);
+		CPPUNIT_ASSERT(buffer.move_front(SIZE, 0));
 		CPPUNIT_ASSERT(buffer.size() == 0);
 	}
 };
