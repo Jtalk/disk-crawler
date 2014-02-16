@@ -21,7 +21,8 @@
 
 #include "FSFileStream.h"
 #include "BaseDecoder.h"
-#include "PlainDecoder.h"
+
+#include "../PlainDecoder.h"
 
 #include "utility.h"
 
