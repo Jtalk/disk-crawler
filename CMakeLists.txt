@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 2.8)
 project(crawler)
 
-add_executable(crawler ZipDecoder.cpp PlainDecoder.cpp base/BaseDecoder.cpp FATFileStream.cpp base/FSWalker.cpp base/FSFileStream.cpp FATWalker.cpp main.cpp)
+add_library(crawl ZipDecoder.cpp PlainDecoder.cpp base/BaseDecoder.cpp FATFileStream.cpp base/FSWalker.cpp base/FSFileStream.cpp FATWalker.cpp )
+find_package(LibArchive REQUIRED)
+target_link_libraries(crawl  ${LibArchive_LIBRARIES})
+
+add_executable(crawler main.cpp)
 
 install(TARGETS crawler RUNTIME DESTINATION bin)
 # 
@@ -27,9 +31,10 @@ install(TARGETS crawler RUNTIME DESTINATION bin)
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -pedantic -pedantic-errors -Wall -Wextra -Werror -Wdeprecated -march=native -O0 -g ${CMAKE_CXX_FLAGS}")
 
-find_package(LibArchive)
+target_link_libraries(crawler crawl)
 
-target_link_libraries(crawler ${LibArchive_LIBRARIES})
-
-include_directories(..)
 add_subdirectory(test)
+enable_testing()
+add_test(NAME Tests COMMAND test/tests)
+set_tests_properties(Tests PROPERTIES PASS_REGULAR_EXPRESSION "TEST PASSED;Pass")
+        
