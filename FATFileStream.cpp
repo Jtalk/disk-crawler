@@ -174,7 +174,7 @@ FATFileStream::streampos FATFileStream::find_next_cluster(streampos source_clust
 
 void FATFileStream::update_cluster(streampos file_pos)
 {
-	this->is_eof = file_pos == npos;
+	this->is_eof = file_pos >= this->file_size;
 	if (this->eof())
 		return;
 	
@@ -216,9 +216,6 @@ FATFileStream::streampos FATFileStream::read(uint8_t *buffer, streampos size)
 
 FATFileStream::streampos FATFileStream::tellg() const
 {
-	if (current_pos > this->file_size)
-		return npos;
-
 	return this->current_pos;
 }
 
@@ -229,8 +226,8 @@ bool FATFileStream::eof() const
 
 void FATFileStream::seekg(streampos offset)
 {
-	this->current_pos = offset;
-	this->update_cluster(offset);
+	this->current_pos = std::min(offset, this->file_size);
+	this->update_cluster(this->current_pos);
 }
 
 bool FATFileStream::correct() const
