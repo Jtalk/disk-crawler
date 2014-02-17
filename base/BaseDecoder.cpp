@@ -21,7 +21,9 @@
 
 BaseDecoder::BaseDecoder(const stream_t &stream):
 	stream(stream)
-{}
+{
+	this->stream->seekg(0);
+}
 
 BaseDecoder::~BaseDecoder()
 {}
