@@ -52,7 +52,8 @@ private:
 	static int open_callback(archive *archive_state, void *data_raw);
 	static off_t skip_callback(archive *archive_state, void *data_raw, off_t request);
 	
-	void take_overlap(Buffer &buffer);
+	void get_overlap(Buffer &buffer);
+	void reset_overlap(const Buffer &buffer);
 		
 public:	
 	ZipDecoder(const stream_t &stream);

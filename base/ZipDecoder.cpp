@@ -85,10 +85,20 @@ off_t ZipDecoder::skip_callback(archive*, void* data_raw, off_t request)
 	return new_off - current;
 }
 
-void ZipDecoder::take_overlap(Buffer &buffer)
+void ZipDecoder::get_overlap(Buffer &buffer)
 {
 	buffer.capture(this->overlap_buffer.cbegin(), this->overlap_buffer.size());
 	this->overlap_buffer.clear();
+}
+
+void ZipDecoder::reset_overlap(const Buffer &buffer)
+{
+	streampos overlap_size = std::min(buffer.size(), size_t(BUFFER_OVERLAP));
+	
+	streampos overlap_offset = (buffer.size() - overlap_size);
+	this->overlap_buffer.capture(buffer.cbegin() + overlap_offset, overlap_size);
+	this->offset -= overlap_size;
+	this->overlap_buffer_offset = (this->offset - overlap_offset);
 }
 
 ZipDecoder::streampos ZipDecoder::read(Buffer &buffer, streampos size)
@@ -99,7 +109,7 @@ ZipDecoder::streampos ZipDecoder::read(Buffer &buffer, streampos size)
 
 	buffer.clear();
 
-	this->take_overlap(buffer);
+	this->get_overlap(buffer);
 
 	archive_entry *entry;
 	
@@ -110,6 +120,10 @@ ZipDecoder::streampos ZipDecoder::read(Buffer &buffer, streampos size)
 
 		while (this->header_read) {
 			auto result =  archive_read_data_block(this->archive_state, (const void**)&read_buffer, &read, &offset);
+			
+			if (read_buffer == nullptr) {
+				break;
+			}
 			
 			RELEASE_ASSERT(result == ARCHIVE_OK or result == ARCHIVE_EOF, "Error %d while reading archive chunk: %s", result, archive_error_string(this->archive_state));
 			
@@ -144,9 +158,8 @@ ZipDecoder::streampos ZipDecoder::read(Buffer &buffer, streampos size)
 
 	} while (buffer.size() < size);
 
-	streampos overlap_offset = buffer.size() - BUFFER_OVERLAP;
-	this->overlap_buffer.capture(buffer.cbegin() + overlap_offset, BUFFER_OVERLAP);
-	this->overlap_buffer_offset += overlap_offset;
+	this->offset += buffer.size();
+	this->reset_overlap(buffer);
 	
 	return buffer.size();
 }
