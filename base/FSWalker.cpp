@@ -46,7 +46,7 @@ FSWalker::signatures_t FSWalker::make_signatures()
 {
 	signatures_t new_signatures((size_t)MAX_SIGNATURE);
 
-	new_signatures[ZIP] = byte_array_t{0x4B, 0x50, 0x04, 0x03};
+	new_signatures[ZIP] = byte_array_t {0x50, 0x4B, 0x03, 0x04};
 
 	return new_signatures;
 }
