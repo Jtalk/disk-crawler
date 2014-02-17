@@ -7,7 +7,7 @@
 #include <cinttypes>
 #include <cstring>
 
-const char *const USAGE = "Usage: fat DEVICE";
+const char *const USAGE = "Usage: crawler DEVICE";
 
 using namespace std;
 
@@ -50,7 +50,7 @@ int main(int argc, char **argv)
 		return ACCESS_DENIED;
 	}
 
-	auto found = walker.find("meanwhile"_us);
+	auto found = walker.find("whilst"_us);
 
 	if (found.empty()) {
 		cout << "Not found" << endl;
@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 	
 	cout << "Found " << found.size() << " matches!" << endl;
 
-	output(found, strlen((const char*)"meanwhileeee"_us));
+	output(found, strlen((const char*)"whilst"_us));
 
 	return SUCCESS;
 }
