@@ -24,14 +24,16 @@
 ZipDecoder::ZipDecoder(const BaseDecoder::stream_t& stream):
 	BaseDecoder(stream), buffer(BUFFER_SIZE),
 	overlap_buffer(0), overlap_buffer_offset(0),
-	offset(0)
+	offset(0), is_eof(false)
 {
 	this->archive_state = archive_read_new();
 
 	archive_read_support_filter_all(this->archive_state);
 	archive_read_support_format_all(this->archive_state);
 
-	archive_read_open2(this->archive_state, this, open_callback, read_callback, skip_callback, nullptr);
+	auto result = archive_read_open2(this->archive_state, this, open_callback, read_callback, skip_callback, nullptr);
+	
+	RELEASE_ASSERT(result == ARCHIVE_OK, "Error while opening archive: %s", archive_error_string(this->archive_state));
 }
 
 ZipDecoder::~ZipDecoder()
@@ -100,22 +102,26 @@ ZipDecoder::streampos ZipDecoder::read(Buffer &buffer, streampos size)
 	this->take_overlap(buffer);
 
 	archive_entry *entry;
-	int result;
-
+	
 	do {
 		const uint8_t *read_buffer;
 		size_t read = 0;
 		int64_t offset;
 
-		while (not archive_read_data_block(this->archive_state, (const void**)&read_buffer, &read, &offset)) {
-			this->is_eof = (read == ARCHIVE_EOF);
-			if (read != ARCHIVE_OK or this->eof()) {
+		while (true) {
+			auto result =  archive_read_data_block(this->archive_state, (const void**)&read_buffer, &read, &offset);
+			
+			RELEASE_ASSERT(result != ARCHIVE_OK and result != ARCHIVE_EOF, "Error while reading archive chunk: %s", archive_error_string(this->archive_state));
+			
+			this->is_eof = (result == ARCHIVE_EOF);
+			
+			if (this->eof()) {
 				break;
 			}
 
 			buffer.capture(read_buffer, read);
 
-			if (buffer.size() >= size or this->eof()) {
+			if (buffer.size() >= size) {
 				break;
 			}
 		}
@@ -124,8 +130,10 @@ ZipDecoder::streampos ZipDecoder::read(Buffer &buffer, streampos size)
 			break;
 		}
 		
-		result = archive_read_next_header(this->archive_state, &entry);
+		auto result = archive_read_next_header(this->archive_state, &entry);
 
+		RELEASE_ASSERT(result != ARCHIVE_OK and result != ARCHIVE_EOF, "Error while reading archive header: %s", archive_error_string(this->archive_state));
+			
 		this->is_eof = (result == ARCHIVE_EOF);
 
 		if (this->eof() or result != ARCHIVE_OK) {
