@@ -175,5 +175,5 @@ ZipDecoder::streampos ZipDecoder::tellg() const
 
 bool ZipDecoder::eof() const
 {
-	return this->is_eof or this->stream->eof();
+	return this->is_eof;
 }
