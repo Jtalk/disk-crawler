@@ -111,7 +111,7 @@ ZipDecoder::streampos ZipDecoder::read(Buffer &buffer, streampos size)
 		while (true) {
 			auto result =  archive_read_data_block(this->archive_state, (const void**)&read_buffer, &read, &offset);
 			
-			RELEASE_ASSERT(result != ARCHIVE_OK and result != ARCHIVE_EOF, "Error while reading archive chunk: %s", archive_error_string(this->archive_state));
+			RELEASE_ASSERT(result == ARCHIVE_OK or result == ARCHIVE_EOF, "Error while reading archive chunk: %s", archive_error_string(this->archive_state));
 			
 			this->is_eof = (result == ARCHIVE_EOF);
 			
@@ -132,7 +132,7 @@ ZipDecoder::streampos ZipDecoder::read(Buffer &buffer, streampos size)
 		
 		auto result = archive_read_next_header(this->archive_state, &entry);
 
-		RELEASE_ASSERT(result != ARCHIVE_OK and result != ARCHIVE_EOF, "Error while reading archive header: %s", archive_error_string(this->archive_state));
+		RELEASE_ASSERT(result == ARCHIVE_OK or result == ARCHIVE_EOF, "Error while reading archive header: %s", archive_error_string(this->archive_state));
 			
 		this->is_eof = (result == ARCHIVE_EOF);
 
@@ -151,11 +151,11 @@ ZipDecoder::streampos ZipDecoder::read(Buffer &buffer, streampos size)
 
 void ZipDecoder::seekg(streampos offset)
 {
-	DEBUG_ASSERT(offset < this->overlap_buffer_offset, "Seeking by an invalid offset is asked in ZipDecoder. Offset requested is %u, but current buffer offset is %u", offset, this->buffer_offset);
+	DEBUG_ASSERT(offset >= this->overlap_buffer_offset, "Seeking by an invalid offset is asked in ZipDecoder. Offset requested is %u, but current buffer offset is %u", offset, this->buffer_offset);
 
 	streampos buffer_end = this->overlap_buffer_offset + this->overlap_buffer.size();
 
-	DEBUG_ASSERT(buffer_end <= offset, "Seeking offset is increasing too fast in ZipDecoder. From %u to %u", buffer_end, offset);
+	DEBUG_ASSERT(buffer_end > offset, "Seeking offset is increasing too fast in ZipDecoder. From %u to %u", buffer_end, offset);
 
 	if (offset == this->offset) {
 		return;
