@@ -33,7 +33,7 @@ static const int PAUSE_DURATIION_MSEC = 1;
 
 #define RELEASE_ASSERT(EXPR, FORMAT, ...) \
 	do { \
-		if (!EXPR) { \
+		if (!(EXPR)) { \
 			printf(FORMAT "\n", __VA_ARGS__); \
 			fflush(stdout); \
 			abort(); \
