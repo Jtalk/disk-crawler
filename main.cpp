@@ -50,7 +50,7 @@ int main(int argc, char **argv)
 		return ACCESS_DENIED;
 	}
 
-	auto found = walker.find("whilst"_us);
+	auto &&found = walker.find("whilst"_us);
 
 	if (found.empty()) {
 		cout << "Not found" << endl;
