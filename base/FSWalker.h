@@ -66,7 +66,7 @@ private:
 	FSWalker(const FSWalker& other) = delete;
 	virtual FSWalker& operator=(const FSWalker& other) = delete;
 
-	results_t && find(FSFileStream *stream, SignatureType type, const byte_array_t &to_find);
+	results_t find(FSFileStream *stream, SignatureType type, const byte_array_t &to_find);
 	BaseDecoder* decode(FSFileStream* stream, SignatureType signature);
 
 public:

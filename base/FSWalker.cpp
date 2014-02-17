@@ -68,7 +68,7 @@ BaseDecoder* FSWalker::decode(FSFileStream* stream, SignatureType signature)
 	return nullptr;
 }
 
-FSWalker::results_t && FSWalker::find(FSFileStream *stream, SignatureType type, const byte_array_t &to_find)
+FSWalker::results_t FSWalker::find(FSFileStream *stream, SignatureType type, const byte_array_t &to_find)
 {
 	auto decoder = this->decode(stream, type);
 
@@ -100,7 +100,8 @@ FSWalker::results_t FSWalker::find(const byte_array_t& to_find)
 			continue;
 		}
 
-		found.splice(found.end(), this->find(file_stream, match.signature, to_find));
+		auto found_by_signature = this->find(file_stream, match.signature, to_find);
+		found.splice(found.end(), found_by_signature);
 	}
 
 	return found;
