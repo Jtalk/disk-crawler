@@ -24,7 +24,7 @@
 ZipDecoder::ZipDecoder(const BaseDecoder::stream_t& stream):
 	BaseDecoder(stream), buffer(BUFFER_SIZE),
 	overlap_buffer(0), overlap_buffer_offset(0),
-	offset(0), is_eof(false)
+	offset(0), is_eof(false), header_read(false)
 {
 	this->archive_state = archive_read_new();
 
@@ -33,7 +33,7 @@ ZipDecoder::ZipDecoder(const BaseDecoder::stream_t& stream):
 
 	auto result = archive_read_open2(this->archive_state, this, open_callback, read_callback, skip_callback, nullptr);
 	
-	RELEASE_ASSERT(result == ARCHIVE_OK, "Error while opening archive: %s", archive_error_string(this->archive_state));
+	RELEASE_ASSERT(result == ARCHIVE_OK, "Error %d while opening archive: %s", result, archive_error_string(this->archive_state));
 }
 
 ZipDecoder::~ZipDecoder()
@@ -108,10 +108,10 @@ ZipDecoder::streampos ZipDecoder::read(Buffer &buffer, streampos size)
 		size_t read = 0;
 		int64_t offset;
 
-		while (true) {
+		while (this->header_read) {
 			auto result =  archive_read_data_block(this->archive_state, (const void**)&read_buffer, &read, &offset);
 			
-			RELEASE_ASSERT(result == ARCHIVE_OK or result == ARCHIVE_EOF, "Error while reading archive chunk: %s", archive_error_string(this->archive_state));
+			RELEASE_ASSERT(result == ARCHIVE_OK or result == ARCHIVE_EOF, "Error %d while reading archive chunk: %s", result, archive_error_string(this->archive_state));
 			
 			this->is_eof = (result == ARCHIVE_EOF);
 			
@@ -132,10 +132,12 @@ ZipDecoder::streampos ZipDecoder::read(Buffer &buffer, streampos size)
 		
 		auto result = archive_read_next_header(this->archive_state, &entry);
 
-		RELEASE_ASSERT(result == ARCHIVE_OK or result == ARCHIVE_EOF, "Error while reading archive header: %s", archive_error_string(this->archive_state));
+		this->header_read = true;
+		
+		RELEASE_ASSERT(result == ARCHIVE_OK or result == ARCHIVE_EOF, "Error %d while reading archive header: %s", result, archive_error_string(this->archive_state));
 			
 		this->is_eof = (result == ARCHIVE_EOF);
-
+		
 		if (this->eof() or result != ARCHIVE_OK) {
 			break;
 		}
