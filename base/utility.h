@@ -37,6 +37,7 @@ static const int PAUSE_DURATIION_MSEC = 1;
 		fflush(stdout); \
 		abort(); \
 	} \
+	else {} \
 	(void)1
 	
 #ifndef DEBUG
