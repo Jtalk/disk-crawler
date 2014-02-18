@@ -8,6 +8,7 @@ set (CRAWLERBASE_SOURCES
 )
 
 set (CRAWLERBASE_HEADERS 
+  Log.h
   utility.h
   Buffer.h
   BaseDecoder.h

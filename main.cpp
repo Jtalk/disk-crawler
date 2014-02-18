@@ -1,6 +1,7 @@
 #include "FATWalker.h"
 
 #include "base/BaseDecoder.h"
+#include "base/Log.h"
 
 #include <iostream>
 
@@ -10,6 +11,8 @@
 const char *const USAGE = "Usage: crawler DEVICE";
 
 using namespace std;
+
+Log *logger;
 
 enum Status {
 	SUCCESS = 0,
@@ -25,12 +28,13 @@ void output(const FSWalker::results_t &results, size_t chunk_size)
 		auto &reader = result.first;
 		auto pos = result.second;
 
+		reader->reset();
 		reader->seekg(pos);
 		Buffer buffer(chunk_size);
 		reader->read(buffer, chunk_size);
 		buffer.begin()[chunk_size] = 0;
-		
-		cout << (char*)buffer.begin() << endl;
+
+		logger->info("Found: %s", (char*)buffer.begin());
 	}
 }
 
@@ -41,25 +45,29 @@ int main(int argc, char **argv)
 		return NOT_ENOUGH_ARGUMENTS;
 	}
 
+	logger = new Log();
+	
 	string filename(argv[1]);
 
 	FATWalker walker(filename);
 
 	if (!walker) {
-		cout << "Access denied" << endl;
+		logger->warning("Access denied");
 		return ACCESS_DENIED;
 	}
 
-	auto &&found = walker.find("whilst"_us);
+	auto && found = walker.find("whilst"_us);
 
 	if (found.empty()) {
-		cout << "Not found" << endl;
+		logger->warning("Not found");
 		return NOT_FOUND;
 	}
-	
-	cout << "Found " << found.size() << " matches!" << endl;
+
+	logger->debug("Found %u matches!", found.size());
 
 	output(found, strlen((const char*)"whilst"_us));
 
+	delete logger;
+	
 	return SUCCESS;
 }

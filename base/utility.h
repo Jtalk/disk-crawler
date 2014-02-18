@@ -19,6 +19,7 @@
 #pragma once
 
 #include "Buffer.h"
+#include "Log.h"
 
 #include "types.h"
 
@@ -31,45 +32,23 @@
 
 static const int PAUSE_DURATIION_MSEC = 1;
 
+extern Log *logger;
+
 #define RELEASE_ASSERT(EXPR, FORMAT, ...) \
 	do { \
 		if (!(EXPR)) { \
-			printf(FORMAT "\n", __VA_ARGS__); \
-			fflush(stdout); \
-			abort(); \
+			logger->error(FORMAT, __VA_ARGS__); \
 		} \
 	} while(0)
 	
 #ifndef DEBUG
 #define DEBUG_ASSERT(EXPR, FORMAT, ...) 
 #else
-#define DEBUG_ASSERT(EXPR, FORMAT, ...) \
-	RELEASE_ASSERT(EXPR, FORMAT, __VA_ARGS__)
+#define DEBUG_ASSERT(EXPR, FORMAT, ...) RELEASE_ASSERT(EXPR, FORMAT, __VA_ARGS__)
 #endif
 
 namespace utility
 {
-
-#ifdef DEBUG
-void assert(bool expr, const std::string &message)
-{
-	if (expr)
-		return;
-
-	std::cout << message << endl;
-
-	abort();
-}
-
-void log(const std; : string &message)
-{
-	cout << message << endl;
-}
-#else
-inline void assert(bool, const std::string&) {}
-inline void log(const std::string&) {}
-#endif
-
 
 template<typename Target>
 inline Target to(const byte_array_t &bytes)

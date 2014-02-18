@@ -19,14 +19,17 @@
 
 #include "FSWalker.h"
 
-#include "FSFileStream.h"
 #include "BaseDecoder.h"
+#include "FSFileStream.h"
+#include "Log.h"
 
 #include "ZipDecoder.h"
 
 #include "utility.h"
 
 #include <cstdio>
+
+extern Log *logger;
 
 const FSWalker::signatures_t FSWalker::signatures(FSWalker::make_signatures());
 
@@ -89,7 +92,7 @@ FSWalker::results_t FSWalker::find(const byte_array_t& to_find)
 	auto signature_matches = this->find_by_signatures();
 
 	if (signature_matches.empty())
-		utility::log("No signatures detected");
+		logger->debug("No signatures detected");
 
 	results_t found;
 
