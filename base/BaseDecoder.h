@@ -43,6 +43,8 @@ public:
 
 	virtual streampos read(Buffer &buffer, streampos size) = 0;
 
+	virtual void reset() = 0;
+	
 	virtual void seekg(streampos offset) = 0;
 	virtual streampos tellg() const = 0;
 	virtual bool eof() const = 0;

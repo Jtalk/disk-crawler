@@ -26,6 +26,15 @@ ZipDecoder::ZipDecoder(const BaseDecoder::stream_t& stream):
 	overlap_buffer(0), overlap_buffer_offset(0),
 	offset(0), is_eof(false), header_read(false)
 {
+	this->init();
+}
+ZipDecoder::~ZipDecoder()
+{
+	this->finalize();
+}
+
+void ZipDecoder::init()
+{
 	this->archive_state = archive_read_new();
 
 	archive_read_support_filter_all(this->archive_state);
@@ -36,7 +45,7 @@ ZipDecoder::ZipDecoder(const BaseDecoder::stream_t& stream):
 	RELEASE_ASSERT(result == ARCHIVE_OK, "Error %d while opening archive: %s", result, archive_error_string(this->archive_state));
 }
 
-ZipDecoder::~ZipDecoder()
+void ZipDecoder::finalize()
 {
 	archive_read_free(this->archive_state);
 }
@@ -164,23 +173,47 @@ ZipDecoder::streampos ZipDecoder::read(Buffer &buffer, streampos size)
 	return buffer.size();
 }
 
-void ZipDecoder::seekg(streampos offset)
+void ZipDecoder::skip(streampos amount)
 {
-	DEBUG_ASSERT(offset >= this->overlap_buffer_offset, "Seeking by an invalid offset is asked in ZipDecoder. Offset requested is %u, but current buffer offset is %u", offset, this->buffer_offset);
+	Buffer buffer(0);
+	
+	while (amount > 0) {
+		streampos new_amount = std::max(int64_t(amount) - int64_t(BUFFER_SIZE), int64_t());
+		streampos current_amount = (amount - new_amount);
+		amount = new_amount;
+		buffer.resize(current_amount);
+		this->read(buffer, current_amount);
+	}
+}
+
+void ZipDecoder::reset()
+{
+	this->finalize();
+	this->init();
+}
+
+void ZipDecoder::seekg(streampos requested_offset)
+{
+	DEBUG_ASSERT(requested_offset >= this->overlap_buffer_offset, 
+		     "Seeking by an invalid offset is asked in ZipDecoder. Offset requested is %u, but current buffer offset is %u", requested_offset, this->overlap_buffer_offset);
 
 	streampos buffer_end = this->overlap_buffer_offset + this->overlap_buffer.size();
 
-	DEBUG_ASSERT(buffer_end > offset, "Seeking offset is increasing too fast in ZipDecoder. From %u to %u", buffer_end, offset);
+	if (buffer_end < requested_offset) {
+		this->overlap_buffer.clear();
+		DEBUG_ASSERT(offset < this->offset, "Offset requested %u is less than current %U, ZipDecoder does not support reverse iteration", requested_offset, this->offset);
+		this->skip(requested_offset - this->offset);
+	}
 
-	if (offset == this->offset) {
+	if (requested_offset == this->offset) {
 		return;
 	}
 
-	size_t in_buffer_offset = offset - this->overlap_buffer_offset;
-	size_t in_buffer_rest = buffer_end - offset;
+	size_t in_buffer_offset = requested_offset - this->overlap_buffer_offset;
+	size_t in_buffer_rest = buffer_end - requested_offset;
 	this->overlap_buffer.move_front(in_buffer_offset, in_buffer_rest);
 
-	this->offset = offset;
+	this->offset = requested_offset;
 }
 
 ZipDecoder::streampos ZipDecoder::tellg() const

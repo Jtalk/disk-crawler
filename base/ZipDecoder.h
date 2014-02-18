@@ -54,12 +54,19 @@ private:
 	
 	void get_overlap(Buffer &buffer);
 	void reset_overlap(const Buffer &buffer);
+	
+	void init();
+	void finalize();
+	
+	void skip(streampos requested_offset);
 		
 public:	
 	ZipDecoder(const stream_t &stream);
 	virtual ~ZipDecoder();
 	
 	ZipDecoder::streampos read(Buffer &buffer, streampos size) override;
+	
+	virtual void reset() override;
 	
 	virtual void seekg(streampos offset) override;
 	virtual streampos tellg() const override;
