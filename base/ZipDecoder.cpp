@@ -35,6 +35,8 @@ ZipDecoder::~ZipDecoder()
 
 void ZipDecoder::init()
 {
+	this->stream->seekg(0);
+	
 	this->archive_state = archive_read_new();
 
 	archive_read_support_filter_all(this->archive_state);
@@ -190,6 +192,12 @@ void ZipDecoder::reset()
 {
 	this->finalize();
 	this->init();
+	
+	this->is_eof = false;
+	this->header_read = false;
+	
+	this->offset = this->overlap_buffer_offset = 0;
+	this->overlap_buffer.clear();
 }
 
 void ZipDecoder::seekg(streampos requested_offset)
@@ -201,7 +209,7 @@ void ZipDecoder::seekg(streampos requested_offset)
 
 	if (buffer_end < requested_offset) {
 		this->overlap_buffer.clear();
-		DEBUG_ASSERT(offset < this->offset, "Offset requested %u is less than current %U, ZipDecoder does not support reverse iteration", requested_offset, this->offset);
+		DEBUG_ASSERT(offset < this->offset, "Offset requested %u is less than current %u, ZipDecoder does not support reverse iteration", requested_offset, this->offset);
 		this->skip(requested_offset - this->offset);
 	}
 
