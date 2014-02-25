@@ -20,8 +20,10 @@
 #pragma once
 
 #include "BaseDecoder.h"
-
+#define  _SSIZE_T_
 #include <archive.h>
+
+#undef read
 
 class ZipDecoder : public BaseDecoder
 {
