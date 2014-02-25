@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include "Log.h"
+
 #include <cstdlib>
 #include <cstdint>
 #include <cstring>
@@ -28,11 +30,13 @@ class Buffer
 	uint8_t *buffer;
 	size_t length;
 	size_t real_length;
+	size_t offset;
 
 	void reallocate(size_t new_length){
 		free(this->buffer);
 		this->buffer = (uint8_t*)malloc(new_length);
 		this->real_length = new_length;
+		this->offset = 0;
 	}
 
 public:
@@ -44,6 +48,7 @@ public:
 	Buffer(size_t count) {
 		this->buffer = (uint8_t*)malloc(count);
 		this->real_length = this->length = count;
+		this->offset = 0;
 	}
 	
 	~Buffer() {
@@ -54,11 +59,19 @@ public:
 		this->length = size;
 		
 		if (this->real_length < this->length) {
+			this->offset = 0;
 			this->reallocate(size);
-		}			
+		}
+	}
+	
+	void reset_offset() {
+		this->length += this->offset;
+		this->offset = 0;
 	}
 	
 	void capture(const uint8_t *read_buffer, size_t read) {
+		if (this->offset != 0)
+			Log().error("Capturing buffer with non-zero offset %u detected", this->offset);
 		auto old_length = this->length;
 		this->resize(this->length + read);
 		memcpy(this->begin() + old_length, read_buffer, read);
@@ -69,17 +82,18 @@ public:
 			return false;
 		}
 		
-		memcpy(this->buffer, this->buffer + offset, count);
+		this->offset = offset;
 		this->resize(count);
 		return true;
 	}
 	
 	void clear() {
 		this->resize(0);
+		this->offset = 0;
 	}
 	
 	iterator begin() {
-		return this->buffer;
+		return this->buffer + this->offset;
 	}
 	
 	iterator end() {
@@ -87,7 +101,7 @@ public:
 	}
 	
 	const_iterator cbegin() const {
-		return this->buffer;
+		return this->buffer + offset;
 	}
 	
 	const_iterator cend() const {
