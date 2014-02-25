@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <string>
+
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
@@ -63,7 +65,6 @@ public:
 		vfprintf(this->descriptor, fmt, args);
 		fputs("\n", this->descriptor);
 		va_end(args);
-		abort();
 	}
 	
 #ifdef DEBUG
@@ -76,7 +77,7 @@ public:
 		va_end(args);		
 	}
 #else
-	void debug(const char *fmt, ...) 
+	void debug(const char*, ...) 
 	{}
 #endif
 };
