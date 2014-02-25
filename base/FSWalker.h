@@ -41,6 +41,7 @@ public:
 protected:
 	enum SignatureType {
 		ZIP = 0,
+		RAR,
 
 		MAX_SIGNATURE
 	};
@@ -50,7 +51,7 @@ protected:
 		SignatureType signature;
 	};
 
-	typedef std::forward_list<PossibleMatch> possible_matches_t;
+	typedef std::list<PossibleMatch> possible_matches_t;
 	typedef std::vector<byte_array_t> signatures_t;
 	typedef FILE* device_t;
 

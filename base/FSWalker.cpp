@@ -50,6 +50,7 @@ FSWalker::signatures_t FSWalker::make_signatures()
 	signatures_t new_signatures((size_t)MAX_SIGNATURE);
 
 	new_signatures[ZIP] = byte_array_t {0x50, 0x4B, 0x03, 0x04};
+	new_signatures[RAR] = byte_array_t {0x52, 0x61, 0x72, 0x21, 0x1A, 0x07};
 
 	return new_signatures;
 }
@@ -60,6 +61,8 @@ BaseDecoder* FSWalker::decode(FSFileStream* stream, SignatureType signature)
 
 	switch (signature) {
 	case ZIP:
+		return new ZipDecoder(to_decode);
+	case RAR:
 		return new ZipDecoder(to_decode);
 
 	case MAX_SIGNATURE:
@@ -93,17 +96,23 @@ FSWalker::results_t FSWalker::find(const byte_array_t& to_find)
 
 	if (signature_matches.empty())
 		logger->debug("No signatures detected");
+	else
+		logger->debug("%u signatures found", signature_matches.size());
 
 	results_t found;
 
 	for (auto & match : signature_matches) {
+		logger->debug("Tracing back %u signature with %u offset", match.signature, match.offset);
+		
 		auto file_stream = this->traceback(match.offset);
 
 		if (file_stream == nullptr) {
+			logger->debug("Invalid file stream traceback for this signature");
 			continue;
 		}
 
 		auto found_by_signature = this->find(file_stream, match.signature, to_find);
+		logger->debug("Found %u items by signature %u", found_by_signature.size(), match.signature);
 		found.splice(found.end(), found_by_signature);
 	}
 
