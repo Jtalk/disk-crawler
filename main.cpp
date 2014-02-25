@@ -8,7 +8,7 @@
 #include <cinttypes>
 #include <cstring>
 
-const char *const USAGE = "Usage: crawler DEVICE";
+const char *const USAGE = "Usage: crawler DEVICE TO_FIND";
 
 using namespace std;
 
@@ -34,13 +34,13 @@ void output(const FSWalker::results_t &results, size_t chunk_size)
 		reader->read(buffer, chunk_size);
 		buffer.begin()[chunk_size] = 0;
 
-		logger->info("Found: %s", (char*)buffer.begin());
+		logger->info("Found: %s at position %u", (char*)buffer.begin(), pos);
 	}
 }
 
 int main(int argc, char **argv)
 {
-	if (argc < 2) {
+	if (argc < 3) {
 		cout << USAGE << endl;
 		return NOT_ENOUGH_ARGUMENTS;
 	}
@@ -48,6 +48,7 @@ int main(int argc, char **argv)
 	logger = new Log();
 	
 	string filename(argv[1]);
+	
 
 	FATWalker walker(filename);
 
@@ -56,7 +57,10 @@ int main(int argc, char **argv)
 		return ACCESS_DENIED;
 	}
 
-	auto && found = walker.find("whilst"_us);
+	auto length = strlen(argv[2]);
+	byte_array_t to_find((uint8_t*)argv[2], length);
+	
+	auto && found = walker.find(to_find);
 
 	if (found.empty()) {
 		logger->warning("Not found");
@@ -65,7 +69,7 @@ int main(int argc, char **argv)
 
 	logger->debug("Found %u matches!", found.size());
 
-	output(found, strlen((const char*)"whilst"_us));
+	output(found, length);
 
 	delete logger;
 	
