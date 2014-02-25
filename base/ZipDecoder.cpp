@@ -44,7 +44,10 @@ void ZipDecoder::init()
 
 	auto result = archive_read_open2(this->archive_state, this, open_callback, read_callback, skip_callback, nullptr);
 	
-	RELEASE_ASSERT(result == ARCHIVE_OK, "Error %d while opening archive: %s", result, archive_error_string(this->archive_state));
+	if (result != ARCHIVE_OK) {
+		logger->warning("Error %d while opening archive: %s", result, archive_error_string(this->archive_state));
+		this->is_eof = true;
+	}
 }
 
 void ZipDecoder::finalize()
