@@ -55,16 +55,18 @@ FATWalker::possible_matches_t FATWalker::find_by_signatures() const
 		buffer.resize(read_bytes);
 		
                 for (size_t signature_type = 0; signature_type < MAX_SIGNATURE; signature_type++) {
+			const auto &signature = signatures[signature_type];
+			size_t in_buffer_offset = 0;
 			do {
-				const auto &signature = signatures[signature_type];
 				size_t found_pos = utility::str_find(buffer, signature);
 				
 				if (found_pos == Buffer::npos) {
 					break;
 				}
 				
+				in_buffer_offset += found_pos;
 				buffer.move_front(found_pos + signature.length(), buffer.size() - found_pos - signature.length());
-				matches.push_front({pos + found_pos, (SignatureType)signature_type});
+				matches.push_front({pos + in_buffer_offset, (SignatureType)signature_type});
 			} while (true);
 			
 			buffer.reset_offset();
@@ -75,7 +77,7 @@ FATWalker::possible_matches_t FATWalker::find_by_signatures() const
                 
 		fseek(this->device, -BUFFER_OVERLAP, SEEK_CUR);
                 
-                usleep(1000);
+                usleep(500);
         }
         
         return matches;
