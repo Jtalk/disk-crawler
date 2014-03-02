@@ -75,7 +75,7 @@ size_t FATFileStream::fat_type() const
 
 size_t FATFileStream::eoc() const
 {
-	switch (this->device.fat_entry_size) {
+	switch (this->device.fat_entry_size * 8) {
 	case 16:
 		return 0xFFF8;
 
@@ -104,7 +104,7 @@ void FATFileStream::init()
 
 	streampos fats_end = this->device.fat_offset + streampos(number_of_fats * this->device.fat_size);
 
-	size_t root_directory_entries_size = number_of_root_entries * 32 / sector_size;
+	size_t root_directory_entries_size = sector_size * std::ceil(float(number_of_root_entries * 32) / sector_size);
 
 	this->device.data_offset = fats_end + streampos(root_directory_entries_size);
 
@@ -116,7 +116,7 @@ void FATFileStream::init()
 	this->device.size = this->device.total_sectors * sector_size;
 	this->device.data_clusters_count = (this->device.total_sectors - this->device.data_offset / sector_size) * sector_size / this->device.cluster_size;
 
-	this->device.fat_entry_size = this->fat_type();
+	this->device.fat_entry_size = this->fat_type() / 8;
 	this->device.eoc = this->eoc();
 
 	this->is_correct = !ferror(this->stream);
@@ -144,7 +144,7 @@ void FATFileStream::init_clusters(streampos file_offset)
 
 size_t FATFileStream::read_fat(streampos fat_entry_offset)
 {
-	switch (this->device.fat_entry_size) {
+	switch (this->device.fat_entry_size * 8) {
 	case 16:
 		return this->get<uint16_t>(fat_entry_offset);
 
