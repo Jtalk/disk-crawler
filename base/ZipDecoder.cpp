@@ -102,17 +102,19 @@ off_t ZipDecoder::skip_callback(archive*, void* data_raw, off_t request)
 void ZipDecoder::get_overlap(Buffer &buffer)
 {
 	buffer.capture(this->overlap_buffer.cbegin(), this->overlap_buffer.size());
-	this->overlap_buffer.clear();
 }
 
 void ZipDecoder::reset_overlap(const Buffer &buffer)
 {
 	streampos overlap_size = std::min(buffer.size(), size_t(BUFFER_OVERLAP));
 	
-	streampos overlap_offset = (buffer.size() - overlap_size);
-	this->overlap_buffer.capture(buffer.cbegin() + overlap_offset, overlap_size);
+	streampos in_buffer_overlap_offset = buffer.size() - overlap_size;
+	
+	this->overlap_buffer.clear();
+	this->overlap_buffer.capture(buffer.cbegin() + in_buffer_overlap_offset, overlap_size);
+	
 	this->offset -= overlap_size;
-	this->overlap_buffer_offset = (this->offset - overlap_offset);
+	this->overlap_buffer_offset = this->offset;
 }
 
 ZipDecoder::streampos ZipDecoder::read(Buffer &buffer, streampos size)
@@ -212,7 +214,7 @@ void ZipDecoder::seekg(streampos requested_offset)
 
 	if (buffer_end < requested_offset) {
 		this->overlap_buffer.clear();
-		DEBUG_ASSERT(offset < this->offset, "Offset requested %u is less than current %u, ZipDecoder does not support reverse iteration", requested_offset, this->offset);
+		DEBUG_ASSERT(requested_offset >= this->offset, "Offset requested %u is less than current %u, ZipDecoder does not support reverse iteration", requested_offset, this->offset);
 		this->skip(requested_offset - this->offset);
 	}
 
@@ -221,7 +223,7 @@ void ZipDecoder::seekg(streampos requested_offset)
 	}
 
 	size_t in_buffer_offset = requested_offset - this->overlap_buffer_offset;
-	size_t in_buffer_rest = buffer_end - requested_offset;
+	size_t in_buffer_rest = this->overlap_buffer.size() - in_buffer_offset;
 	this->overlap_buffer.move_front(in_buffer_offset, in_buffer_rest);
 
 	this->offset = requested_offset;
