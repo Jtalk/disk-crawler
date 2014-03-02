@@ -45,6 +45,8 @@ public:
 	
 	static const size_t npos = size_t(-1);
 	
+	Buffer() = delete;
+	
 	Buffer(size_t count) {
 		this->buffer = (uint8_t*)malloc(count);
 		this->real_length = this->length = count;
@@ -77,12 +79,12 @@ public:
 		memcpy(this->begin() + old_length, read_buffer, read);
 	}
 	
-	bool move_front(size_t offset, size_t count) {
-		if (offset + count > this->length) {
+	bool move_front(size_t move_offset, size_t count) {
+		if (move_offset + count > this->length) {
 			return false;
 		}
 		
-		this->offset = offset;
+		this->offset = move_offset;
 		this->resize(count);
 		return true;
 	}
