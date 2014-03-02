@@ -84,7 +84,7 @@ public:
 			return false;
 		}
 		
-		this->offset = move_offset;
+		this->offset += move_offset;
 		this->resize(count);
 		return true;
 	}
