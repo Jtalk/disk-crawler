@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 project(crawler)
 
 # Compilation settings
-set (CMAKE_CXX_FLAGS "-std=c++11 -pedantic -pedantic-errors -Wall -Wextra -Werror -Wdeprecated -march=native -O0 -g ${CMAKE_CXX_FLAGS}")
+set (CMAKE_CXX_FLAGS "-std=c++11 -pedantic -pedantic-errors -Wall -Wextra -Werror -Wdeprecated -march=native ${CMAKE_CXX_FLAGS}")
 
 set (CMAKE_CXX_FLAGS_DEBUG          "-g -O0 -DDEBUG")
 set (CMAKE_CXX_FLAGS_RELEASE        "-Ofast -DNDEBUG")
