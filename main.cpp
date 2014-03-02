@@ -71,6 +71,9 @@ int main(int argc, char **argv)
 
 	output(found, length);
 
+	for (auto &result : found)
+		delete result.first;
+	
 	delete logger;
 	
 	return SUCCESS;
