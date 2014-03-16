@@ -47,7 +47,9 @@ FSWalker::results_t&& walk(const string &filename, const byte_array_t &to_find)
 		exit(ACCESS_DENIED);
 	}
 	
-	return std::move(walker.find(to_find));
+	auto && found = walker.find(to_find);
+	
+	return std::move(found);
 }
 
 int main(int argc, char **argv)
