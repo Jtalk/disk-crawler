@@ -38,7 +38,7 @@ void output(const FSWalker::results_t &results, size_t chunk_size)
 	}
 }
 
-FSWalker::results_t&& walk(const string &filename, const byte_array_t &to_find)
+FSWalker::results_t walk(const string &filename, const byte_array_t &to_find)
 {
 	FATWalker walker(filename);
 
@@ -47,9 +47,9 @@ FSWalker::results_t&& walk(const string &filename, const byte_array_t &to_find)
 		exit(ACCESS_DENIED);
 	}
 	
-	auto && found = walker.find(to_find);
+	auto found = walker.find(to_find);
 	
-	return std::move(found);
+	return found;
 }
 
 int main(int argc, char **argv)
