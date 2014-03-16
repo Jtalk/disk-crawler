@@ -39,6 +39,8 @@ bool dump(ByteReader &reader, const std::string &filename)
 		return false;
 	}
 	
+	reader.seekg(0);
+	
 	Buffer buffer(BUFFER_SIZE);
 	
 	while (reader.read(buffer, buffer.size()) > 0) {
