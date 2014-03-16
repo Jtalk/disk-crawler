@@ -1,2 +1,2 @@
 TODO:
-	Take care of an improper device size (when file system structures just do not fit).
+	FATFileStream must take care of FAT service entries (first two)
