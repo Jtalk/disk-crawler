@@ -205,7 +205,7 @@ FATFileStream::streampos FATFileStream::find_next_cluster(streampos source_clust
 {
 	size_t number = this->n_from_data(source_cluster);
 
-	auto entry = this->read_fat(number);
+	auto entry = this->read_fat(number + FAT_SERVICE_ENTRIES_COUNT) - FAT_SERVICE_ENTRIES_COUNT;
 
 	if (entry == 0)
 		return source_cluster + this->device.cluster_size;
