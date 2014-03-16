@@ -18,6 +18,10 @@
 
 #include "utility.h"
 
+#include "Log.h"
+
+extern Log *logger;
+
 namespace utility {
 	
 size_t str_find(const Buffer &string, const byte_array_t &substr)
@@ -33,20 +37,23 @@ bool dump(ByteReader &reader, const std::string &filename)
 {
 	using namespace std;
 	
-	ofstream file(filename, ios_base::binary | ios_base::out | ios_base::in);
+	fstream file(filename, ios_base::binary | ios_base::out | ios_base::trunc);
 	
 	if (not file.is_open()) {
+		logger->warning("File %s cannot be opened for write", filename.c_str());
 		return false;
 	}
 	
 	reader.seekg(0);
 	
 	Buffer buffer(BUFFER_SIZE);
+	auto read = reader.read(buffer, buffer.size());
 	
-	while (reader.read(buffer, buffer.size()) > 0) {
+	while (read > 0 and read != ByteReader::npos) {
 		const char *buffer_raw = reinterpret_cast<const char*>(buffer.cbegin());
 		file.write(buffer_raw, buffer.size());
 		buffer.resize(BUFFER_SIZE);
+		read = reader.read(buffer, buffer.size());
 	}
 	
 	return true;
