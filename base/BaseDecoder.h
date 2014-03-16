@@ -29,7 +29,7 @@ class BaseDecoder : public ByteReader
 	BaseDecoder(const BaseDecoder&) = delete;
 
 public:
-	typedef std::shared_ptr<FSFileStream> stream_t;
+	typedef ByteReader *stream_t;
 
 protected:
 	stream_t stream;
