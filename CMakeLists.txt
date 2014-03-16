@@ -4,7 +4,7 @@ project(crawler)
 # Compilation settings
 set (CMAKE_CXX_FLAGS "-std=c++11 -pedantic -pedantic-errors -Wall -Wextra -Werror -Wdeprecated -march=native ${CMAKE_CXX_FLAGS}")
 
-set (CMAKE_CXX_FLAGS_DEBUG          "-g -O0 -DDEBUG")
+set (CMAKE_CXX_FLAGS_DEBUG          "-g -O0 -DDEBUG -DVERBOSE")
 set (CMAKE_CXX_FLAGS_RELEASE        "-Ofast -DNDEBUG")
 set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-Ofast -g")
 

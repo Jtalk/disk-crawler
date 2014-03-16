@@ -56,7 +56,7 @@ private:
 	static off_t skip_callback(archive *archive_state, void *data_raw, off_t request);
 	
 	void get_overlap(Buffer &buffer);
-	void reset_overlap(const Buffer &buffer);
+	void update_overlap(const Buffer &buffer);
 	
 	void init();
 	void finalize();

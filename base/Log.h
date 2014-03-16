@@ -80,4 +80,17 @@ public:
 	void debug(const char*, ...) 
 	{}
 #endif
+#ifdef VERBOSE
+	void verbose(const char *fmt, ...) {
+		va_list args;
+		va_start(args, fmt);
+		fprintf(this->descriptor, "Verbose: ");
+		vfprintf(this->descriptor, fmt, args);
+		fputs("\n", this->descriptor);
+		va_end(args);		
+	}
+#else
+	void verbose(const char*, ...) 
+	{}
+#endif
 };

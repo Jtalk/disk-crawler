@@ -32,7 +32,7 @@ protected:
         FILE *stream;
         
         template<typename T>
-        T get(streampos offset) const {
+        T get(streampos offset) const { 
                 fseek(this->stream, offset, SEEK_SET);
                 T value;
                 fread(reinterpret_cast<void*>(&value), 1, sizeof(value), this->stream);
