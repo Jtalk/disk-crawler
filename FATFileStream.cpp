@@ -190,19 +190,22 @@ void FATFileStream::update_cluster(streampos file_pos)
 	fseek(this->stream, offset, SEEK_SET);
 }
 
-FATFileStream::streampos FATFileStream::read(uint8_t *buffer, streampos size)
+FATFileStream::streampos FATFileStream::read(Buffer &buffer, streampos size)
 {
+	if (buffer.size() < size) {
+		return npos;
+	}
+	
 	streampos total_read = 0;
 
 	while (total_read < size) {
 		streampos cluster_offset = (this->device.data_offset - this->current_pos) % this->device.cluster_size;
 		auto rest = std::min(size, streampos(this->device.cluster_size - cluster_offset));
-		
-		streampos read = fread(buffer, 1, rest, this->stream);
+				
+		streampos read = fread(buffer.begin() + total_read, 1, rest, this->stream);
 
 		total_read += read;
 
-		buffer += read;
 		this->current_pos += read;
 
 		this->update_cluster(this->tellg());

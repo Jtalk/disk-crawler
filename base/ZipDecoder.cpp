@@ -68,7 +68,7 @@ ssize_t ZipDecoder::read_callback(archive *archive_state, void *data_raw, const 
 		return 0;
 
 	data->buffer.resize(BUFFER_SIZE);
-	auto read = data->stream->read(data->buffer.begin(), data->buffer.size());
+	auto read = data->stream->read(data->buffer, data->buffer.size());
 	data->buffer.resize(read);
 	*buffer = data->buffer.begin();
 	return read;

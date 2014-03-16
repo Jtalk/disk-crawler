@@ -28,7 +28,7 @@ PlainDecoder::~PlainDecoder()
 
 PlainDecoder::streampos PlainDecoder::read(Buffer &buffer, streampos size)
 {
-	return this->stream->read(buffer.begin(), size);
+	return this->stream->read(buffer, size);
 }
 
 void PlainDecoder::seekg(streampos offset)

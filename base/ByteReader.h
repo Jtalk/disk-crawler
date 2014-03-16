@@ -1,5 +1,5 @@
 /*
-    Disk Crawler library.
+    Disk Crawler Library.
     Copyright (C) 2013  Jtalk <me@jtalk.me>
 
     This program is free software: you can redistribute it and/or modify
@@ -18,32 +18,26 @@
 
 #pragma once
 
-#include "ByteReader.h"
+#include "Buffer.h"
 
-#include <cstdio>
 #include <cinttypes>
+#include <cstddef>
 
-class FSFileStream : public ByteReader
+class ByteReader
 {
-        FSFileStream() = delete;
-        FSFileStream(const FSFileStream &other) = delete;
-        
-protected:
-        FILE *const stream;
-        
-        template<typename T>
-        T get(streampos offset) const {
-                fseek(this->stream, offset, SEEK_SET);
-                T value;
-                fread(reinterpret_cast<void*>(&value), 1, sizeof(value), this->stream);
-                return value;
-        }
-    
-        virtual bool correct() const = 0;
-	
 public:
-        FSFileStream(FILE *stream);
-        virtual ~FSFileStream();
+	typedef size_t streampos;
+	
+	static const streampos npos = streampos(-1);
+
+	ByteReader() = default;
+	ByteReader(const ByteReader& other) = default;
+
+	virtual streampos read(Buffer &buffer, streampos size) = 0;
+	
+        virtual void seekg(streampos offset) = 0;
+        virtual streampos tellg() const = 0;
+        virtual bool eof() const = 0;
         
-        virtual bool operator !() const override final;
+	virtual bool operator !() const = 0;
 };

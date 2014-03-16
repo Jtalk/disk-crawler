@@ -66,7 +66,7 @@ public:
         FATFileStream(FILE *stream, streampos absolute_offset);
         virtual ~FATFileStream();
         
-        virtual streampos read(uint8_t* buffer, streampos size) override;
+        virtual streampos read(Buffer &buffer, streampos size) override;
         
         virtual void seekg(streampos offset) override;
         virtual streampos tellg() const override;

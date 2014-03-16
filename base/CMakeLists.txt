@@ -1,5 +1,6 @@
 
 set (CRAWLERBASE_SOURCES
+  utility.cpp
   BaseDecoder.cpp
   FSWalker.cpp 
   FSFileStream.cpp
@@ -8,6 +9,7 @@ set (CRAWLERBASE_SOURCES
 )
 
 set (CRAWLERBASE_HEADERS 
+  ByteReader.h 
   Log.h
   utility.h
   Buffer.h

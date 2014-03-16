@@ -54,19 +54,14 @@ namespace utility
 
 static const size_t BUFFER_SIZE = 100000000;
 
+size_t str_find(const Buffer &string, const byte_array_t &substr);
+
+bool dump(ByteReader &reader, const std::string &filename);
+
 template<typename Target>
 inline Target to(const byte_array_t &bytes)
 {
 	return *reinterpret_cast<const Target*>(&bytes[0]);
-}
-
-static size_t str_find(const Buffer &string, const byte_array_t &substr)
-{
-	byte_array_t array(string.cbegin(), string.size());
-
-	// TODO: Bayer-Moore
-
-	return array.find(substr);
 }
 
 template<class Stream>
@@ -108,26 +103,6 @@ size_t find(Stream &stream, const byte_array_t &to_find)
 	}
 
 	return Stream::npos;
-}
-
-bool dump(ByteReader &reader, const std::string &filename)
-{
-	using namespace std;
-	
-	ofstream file(filename, ios_base::binary | ios_base::out | ios_base::in);
-	
-	if (not file.is_open()) {
-		return false;
-	}
-	
-	Buffer buffer(BUFFER_SIZE);
-	
-	while (reader.read(buffer, buffer.size()) > 0) {
-		file.write(buffer.cbegin(), buffer.size());
-		buffer.resize(BUFFER_SIZE);
-	}
-	
-	return true;
 }
 
 }

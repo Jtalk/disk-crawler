@@ -20,7 +20,8 @@
 #pragma once
 
 #include "BaseDecoder.h"
-#define  _SSIZE_T_
+#include "ByteReader.h"
+
 #include <archive.h>
 
 #undef read

@@ -23,16 +23,13 @@
 
 #include <memory>
 
-class BaseDecoder
+class BaseDecoder : public ByteReader
 {
 	BaseDecoder() = delete;
 	BaseDecoder(const BaseDecoder&) = delete;
 
 public:
-	typedef FSFileStream::streampos streampos;
 	typedef std::shared_ptr<FSFileStream> stream_t;
-		
-	static const streampos npos = FSFileStream::npos;
 
 protected:
 	stream_t stream;
@@ -41,12 +38,7 @@ public:
 	BaseDecoder(const stream_t &stream);
 	virtual ~BaseDecoder();
 
-	virtual streampos read(Buffer &buffer, streampos size) = 0;
-
 	virtual void reset() = 0;
 	
-	virtual void seekg(streampos offset) = 0;
-	virtual streampos tellg() const = 0;
-	virtual bool eof() const = 0;
-	bool operator !() const;
+	virtual bool operator !() const override final;
 };
