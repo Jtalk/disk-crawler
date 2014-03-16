@@ -38,6 +38,18 @@ void output(const FSWalker::results_t &results, size_t chunk_size)
 	}
 }
 
+FSWalker::results_t&& walk(const string &filename, const byte_array_t &to_find)
+{
+	FATWalker walker(filename);
+
+	if (!walker) {
+		logger->warning("Access denied");
+		exit(ACCESS_DENIED);
+	}
+	
+	return std::move(walker.find(to_find));
+}
+
 int main(int argc, char **argv)
 {
 	if (argc < 3) {
@@ -49,18 +61,10 @@ int main(int argc, char **argv)
 	
 	string filename(argv[1]);
 	
-
-	FATWalker walker(filename);
-
-	if (!walker) {
-		logger->warning("Access denied");
-		return ACCESS_DENIED;
-	}
-
 	auto length = strlen(argv[2]);
 	byte_array_t to_find((uint8_t*)argv[2], length);
 	
-	auto && found = walker.find(to_find);
+	auto && found = walk(filename, to_find);
 
 	if (found.empty()) {
 		logger->warning("Not found");
