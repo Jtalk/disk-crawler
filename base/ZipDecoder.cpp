@@ -171,52 +171,32 @@ ZipDecoder::streampos ZipDecoder::read(Buffer &buffer, streampos size)
 		size_t read = 0;
 		int64_t offset;
 
-		while (this->header_read) {
-			auto result =  archive_read_data_block(this->archive_state, (const void**)&read_buffer, &read, &offset);
-			
-			if (read_buffer == nullptr) {
-				break;
-			}
-			
-			if (result != ARCHIVE_OK and result != ARCHIVE_EOF) {
-				logger->debug("Error %d while reading archive chunk: %s", result, archive_error_string(this->archive_state));
-				this->is_eof = true;
-				break;
-			}
-			
-			this->is_eof = (result == ARCHIVE_EOF);
-			
-			if (this->eof()) {
-				break;
-			}
-
-			buffer.capture(read_buffer, read);
-
-			if (buffer.size() >= size) {
-				break;
-			}
-		}
-		
-		if (buffer.size() >= size or this->eof()) {
-			break;
-		}
-		
 		auto result = archive_read_next_header(this->archive_state, &entry);
-
-		this->header_read = true;
 		
-		if (result != ARCHIVE_OK and result != ARCHIVE_EOF) {
-			logger->debug("Error %d while reading archive header: %s", result, archive_error_string(this->archive_state));
+		if (result == ARCHIVE_EOF) {
+			logger->verbose("End of archive is reached in ZIP decode header reader");
+			this->is_eof = true;
+			break;
+		} else if (result != ARCHIVE_OK) {
+			logger->debug("Error %d while reading archive chunk in header: %s", result, archive_error_string(this->archive_state));
 			this->is_eof = true;
 			break;
 		}
-			
-		this->is_eof = (result == ARCHIVE_EOF);
 		
-		if (this->eof() or result != ARCHIVE_OK) {
+		result = archive_read_data_block(this->archive_state, (const void**)&read_buffer, &read, &offset);
+		
+		if (result == ARCHIVE_EOF) {
+			logger->verbose("End of archive is reached in ZIP decoder block reader");
+			this->is_eof = true;
+			break;
+		} else if (result != ARCHIVE_OK) {
+			logger->debug("Error %d while reading archive chunk in block: %s", result, archive_error_string(this->archive_state));
+			this->is_eof = true;
 			break;
 		}
-
+		
+		buffer.capture(read_buffer, read);
+		
 	} while (buffer.size() < size);
 
 	this->offset += buffer.size();
