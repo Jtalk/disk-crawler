@@ -32,9 +32,10 @@ extern Log *logger;
 
 const FSWalker::signatures_t FSWalker::signatures(FSWalker::make_signatures());
 
-FSWalker::FSWalker(const std::string &device_name)
+FSWalker::FSWalker(const std::string &device_name):
+	device_name(device_name)
 {
-	this->device = fopen(device_name.c_str(), "rb");
+	this->device = fopen(this->device_name.c_str(), "rb");
 }
 
 FSWalker::~FSWalker()

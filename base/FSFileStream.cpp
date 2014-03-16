@@ -18,12 +18,17 @@
 
 #include "FSFileStream.h"
 
-FSFileStream::FSFileStream(FILE *stream):
-        stream(stream)
-{}
+FSFileStream::FSFileStream(const std::string &device_name)
+{
+	this->stream = fopen(device_name.c_str(), "rb");
+}
 
 FSFileStream::~FSFileStream()
-{}
+{
+	if (this->stream != nullptr) {
+		fclose(this->stream);
+	}
+}
 
 bool FSFileStream::operator!() const
 {

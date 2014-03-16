@@ -58,6 +58,7 @@ protected:
 	static const signatures_t signatures;
 
 	device_t device;
+	const std::string device_name;
 
 	virtual FSFileStream *traceback(size_t absolute_offset) const = 0;
 	virtual possible_matches_t find_by_signatures() const = 0;
