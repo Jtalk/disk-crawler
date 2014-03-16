@@ -19,12 +19,14 @@
 #pragma once
 
 #include "Buffer.h"
+#include "ByteReader.h"
 #include "Log.h"
 
 #include "types.h"
 
 #include <unistd.h>
 
+#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -40,15 +42,17 @@ extern Log *logger;
 			logger->error(FORMAT, __VA_ARGS__); \
 		} \
 	} while(0)
-	
+
 #ifndef DEBUG
-#define DEBUG_ASSERT(EXPR, FORMAT, ...) 
+#define DEBUG_ASSERT(EXPR, FORMAT, ...)
 #else
 #define DEBUG_ASSERT(EXPR, FORMAT, ...) RELEASE_ASSERT(EXPR, FORMAT, __VA_ARGS__)
 #endif
 
 namespace utility
 {
+
+static const size_t BUFFER_SIZE = 100000000;
 
 template<typename Target>
 inline Target to(const byte_array_t &bytes)
@@ -68,8 +72,6 @@ static size_t str_find(const Buffer &string, const byte_array_t &substr)
 template<class Stream>
 size_t find(Stream &stream, const byte_array_t &to_find)
 {
-	static const size_t BUFFER_SIZE = 100000000;
-
 	if (!stream)
 		return Stream::npos;
 
@@ -83,11 +85,11 @@ size_t find(Stream &stream, const byte_array_t &to_find)
 
 		buffer.resize(BUFFER_SIZE);
 		auto read = stream.read(buffer, buffer.size());
-		
+
 		if (read == Stream::npos) {
 			return Stream::npos;
 		}
-		
+
 		buffer.resize(read);
 
 		auto found_pos = str_find(buffer, to_find);
@@ -106,6 +108,26 @@ size_t find(Stream &stream, const byte_array_t &to_find)
 	}
 
 	return Stream::npos;
+}
+
+bool dump(ByteReader &reader, const std::string &filename)
+{
+	using namespace std;
+	
+	ofstream file(filename, ios_base::binary | ios_base::out | ios_base::in);
+	
+	if (not file.is_open()) {
+		return false;
+	}
+	
+	Buffer buffer(BUFFER_SIZE);
+	
+	while (reader.read(buffer, buffer.size()) > 0) {
+		file.write(buffer.cbegin(), buffer.size());
+		buffer.resize(BUFFER_SIZE);
+	}
+	
+	return true;
 }
 
 }
