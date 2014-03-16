@@ -52,12 +52,17 @@ class FATFileStream : public FSFileStream
         FATFileStream() = delete;
         FATFileStream(const FATFileStream& other) = delete;
         
+	streampos data_from_n(uint32_t number);
+	streampos fat_from_n(uint32_t number);
+	uint32_t n_from_data(streampos offset);
+	uint32_t n_from_fat(streampos offset);
+	
         void init();
 	void init_clusters(streampos file_offset);
         streampos find_next_cluster(streampos source_cluster);
         void update_cluster(streampos file_pos);
         
-        size_t read_fat(streampos fat_entry_offset);
+        size_t read_fat(uint32_t number);
         
         size_t fat_type() const;
         size_t eoc() const;

@@ -19,10 +19,14 @@
 
 #include "FATFileStream.h"
 
+#include "base/Log.h"
+
 #include <algorithm>
 
 #include <cmath>
 #include <cstdlib>
+
+extern Log *logger;
 
 enum FATOffsets : size_t {
 	SECTOR_SIZE = 0x0B,
@@ -39,6 +43,8 @@ enum FATOffsets : size_t {
 enum FATDirectoryOffsets : size_t {
 	SIZE_OFFSET = 0x1C
 };
+
+static const uint32_t FAT_SERVICE_ENTRIES_COUNT = 2;
 
 FATFileStream::FATFileStream(const std::string &device_name, streampos absolute_offset)
 	: FSFileStream(device_name), is_correct(true), is_eof(false)
@@ -60,6 +66,42 @@ FATFileStream::FATFileStream(const std::string &device_name, streampos absolute_
 FATFileStream::~FATFileStream()
 {}
 
+FATFileStream::streampos FATFileStream::data_from_n(uint32_t number)
+{
+	streampos in_data_offset = number * this->device.cluster_size;
+	return this->device.data_offset + in_data_offset;
+}
+
+FATFileStream::streampos FATFileStream::fat_from_n(uint32_t number)
+{
+	streampos in_fat_offset = number * this->device.fat_entry_size;
+	return this->device.fat_offset + in_fat_offset;
+}
+
+uint32_t FATFileStream::n_from_data(streampos offset)
+{
+	if (offset < this->device.data_offset) {
+		logger->warning("Invalid offset %u is converting into data cluster number", offset);
+		return 0;
+	}
+	
+	streampos in_data_offset = offset - this->device.data_offset;
+	
+	return in_data_offset / this->device.cluster_size;
+}
+
+uint32_t FATFileStream::n_from_fat(streampos offset)
+{
+	if (offset < this->device.fat_offset or offset >= this->device.fat_offset * this->device.fat_size) {
+		logger->warning("Invalid offset %u is converting into fat cluster number", offset);
+		return 0;
+	}
+	
+	streampos in_fat_offset = offset - this->device.fat_offset;
+	
+	return in_fat_offset / this->device.fat_entry_size;
+}
+
 size_t FATFileStream::fat_type() const
 {
 	auto count = this->device.data_clusters_count;
@@ -78,7 +120,6 @@ size_t FATFileStream::eoc() const
 	switch (this->device.fat_entry_size * 8) {
 	case 16:
 		return 0xFFF8;
-
 	case 32:
 		return 0xFFFFFF8;
 
@@ -119,31 +160,35 @@ void FATFileStream::init()
 	this->device.fat_entry_size = this->fat_type() / 8;
 	this->device.eoc = this->eoc();
 
-	this->is_correct = !ferror(this->stream);
+	this->is_correct = not ferror(this->stream);
 }
 
 void FATFileStream::init_clusters(streampos file_offset)
 {
-	int64_t from_data_offset = file_offset - this->device.data_offset;
-	
-	streampos file_cluster_num = from_data_offset / this->device.cluster_size;
+	auto data_cluster_num = this->n_from_data(file_offset);
+	auto data_cluster_offset = this->data_from_n(data_cluster_num);
 
-	streampos first_cluster_offset = this->device.cluster_size * file_cluster_num + this->device.data_offset;
+	if (data_cluster_offset != file_offset) {
+		this->is_correct = false;
+		return;
+	}
 	
-	this->current_pos = first_cluster_offset;
-	this->clusters.push_back(first_cluster_offset);
+	this->current_pos = data_cluster_offset;
+	this->clusters.push_back(data_cluster_offset);
 	streampos next;
 	
 	do {
 		auto last_found = this->clusters.back();
 		next = this->find_next_cluster(last_found);
 	} while (next != npos && (this->clusters.push_back(next), true));
-	
+
 	this->file_size = this->clusters.size() * this->device.cluster_size;
 }
 
-size_t FATFileStream::read_fat(streampos fat_entry_offset)
+size_t FATFileStream::read_fat(uint32_t number)
 {
+	streampos fat_entry_offset = this->fat_from_n(number);
+
 	switch (this->device.fat_entry_size * 8) {
 	case 16:
 		return this->get<uint16_t>(fat_entry_offset);
@@ -158,11 +203,9 @@ size_t FATFileStream::read_fat(streampos fat_entry_offset)
 
 FATFileStream::streampos FATFileStream::find_next_cluster(streampos source_cluster)
 {
-	size_t number = (source_cluster - this->device.data_offset) / this->device.cluster_size;
+	size_t number = this->n_from_data(source_cluster);
 
-	streampos fat_entry_offset = this->device.fat_offset + streampos(this->device.fat_entry_size * number);
-
-	auto entry = this->read_fat(fat_entry_offset);
+	auto entry = this->read_fat(number);
 
 	if (entry == 0)
 		return source_cluster + this->device.cluster_size;
@@ -175,15 +218,19 @@ FATFileStream::streampos FATFileStream::find_next_cluster(streampos source_clust
 void FATFileStream::update_cluster(streampos file_pos)
 {
 	this->is_eof = file_pos >= this->file_size;
-	if (this->eof())
+	
+	if (this->eof()) {
 		return;
+	}
 	
 	streampos cluster_num = file_pos / this->device.cluster_size;
 	streampos cluster_offset = file_pos % this->device.cluster_size;
 
 	this->is_eof = cluster_num >= this->clusters.size();
-	if (this->eof())
+	
+	if (this->eof()) {
 		return;
+	}
 	
 	streampos offset = this->clusters[cluster_num] + cluster_offset;
 
@@ -196,6 +243,10 @@ FATFileStream::streampos FATFileStream::read(Buffer &buffer, streampos size)
 		return npos;
 	}
 	
+	if (this->eof()) {
+		return npos;
+	}
+	
 	streampos total_read = 0;
 
 	while (total_read < size) {
@@ -204,14 +255,20 @@ FATFileStream::streampos FATFileStream::read(Buffer &buffer, streampos size)
 				
 		streampos read = fread(buffer.begin() + total_read, 1, rest, this->stream);
 
+		logger->verbose("Successfuly read %u bytes from FAT file", read);
+		
 		total_read += read;
 
 		this->current_pos += read;
 
+		auto old_pos = this->tellg();
 		this->update_cluster(this->tellg());
+		logger->verbose("Updating FAT file position from %u to %u", old_pos, this->tellg());
 		
-		if (this->eof())
+		if (this->eof()) {
+			logger->verbose("EOF is occured in FAT file reader");
 			break;
+		}
 	}
 
 	return total_read;
