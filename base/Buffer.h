@@ -89,6 +89,10 @@ public:
 		this->length += read;
 	}
 	
+	void capture(const Buffer &other) {
+		this->capture(other.buffer, other.length);
+	}
+	
 	bool move_front(size_t move_offset, size_t count) {
 		if (move_offset + count > this->length) {
 			return false;
