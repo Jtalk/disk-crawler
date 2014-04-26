@@ -79,13 +79,23 @@ FSWalker::results_t FSWalker::find(FSFileStream *stream, SignatureType type, con
 	auto decoder = this->decode(stream, type);
 
 	results_t results;
+	BaseDecoder::streampos offset = 0;
+	bool has_match = false;
+	while(true) {
+		auto found = utility::find(*decoder, to_find, offset);
 
-	auto found = utility::find(*decoder, to_find);
-
-	if (found != BaseDecoder::npos)
+		if (found == BaseDecoder::npos) {
+			break;
+		}
+		
 		results.emplace_front(decoder, found);
-	else
+		offset += (found + 1);
+		has_match = true;
+	}
+	
+	if (!has_match) {
 		delete decoder;
+	}
 
 	return std::move(results);
 }
