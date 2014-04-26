@@ -125,7 +125,7 @@ public:
 	}
 	
 	size_t size() const {
-		return this->length;
+		return this->length - this->offset;
 	}
 	
 	bool empty() const {
