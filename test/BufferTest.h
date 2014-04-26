@@ -44,7 +44,7 @@ public:
 		CPPUNIT_ASSERT(buffer.size() == SIZE);
 		
 		const size_t NEW = 100;
-		buffer.resize(100);
+		buffer.reset(100);
 		CPPUNIT_ASSERT(buffer.size() == NEW);
 	}
 	
