@@ -123,9 +123,9 @@ off_t ZipDecoder::skip_callback(archive*, void* data_raw, off_t request)
 
 void ZipDecoder::get_overlap(Buffer &buffer)
 {
-	DEBUG_ASSERT(buffer.empty(), "Overlap buffer is not empty in ZipDecoder overlap getting");
-	DEBUG_ASSERT(this->offset >= this->overlap_buffer_offset, "Overlap buffer is not containing enough data");
-	DEBUG_ASSERT(this->offset <= this->overlap_buffer_offset + this->overlap_buffer.size(), "Offset is beyond overlap buffer");
+	DEBUG_ASSERT(buffer.empty(), "Overlap buffer is not empty in ZipDecoder overlap getting, size is %u", buffer.size());
+	DEBUG_ASSERT(this->offset >= this->overlap_buffer_offset, "Overlap buffer is not containing enough data: offset is %u, overlap offset is %u", this->offset, this->overlap_buffer_offset);
+	DEBUG_ASSERT(this->offset <= this->overlap_buffer_offset + this->overlap_buffer.size(), "Offset is beyond overlap buffer: offset is %u, buffer end at %u", this->offset, this->overlap_buffer_offset + this->overlap_buffer.size());
 	
 	auto overlap_offset_diff = this->offset - this->overlap_buffer_offset;	
 	buffer.capture(this->overlap_buffer.cbegin() + overlap_offset_diff, this->overlap_buffer.size() - overlap_offset_diff);
@@ -237,13 +237,21 @@ void ZipDecoder::seekg(streampos requested_offset)
 
 	streampos buffer_end = this->overlap_buffer_offset + this->overlap_buffer.size();
 
-	DEBUG_ASSERT(requested_offset <= buffer_end, "Seeking by an invalid offset is asked in ZipDecoder. Offset requested is %u, but current buffer end is %u", requested_offset, buffer_end);
-	DEBUG_ASSERT(requested_offset >= this->overlap_buffer_offset, "Seeking offset %u in ZipDecoder fails: requested offset is %u, but overlap buffer starts at %u", requested_offset, this->overlap_buffer_offset);
+	DEBUG_ASSERT(requested_offset >= this->overlap_buffer_offset, 
+		     "Seeking offset %u in ZipDecoder fails: requested offset is %u, but overlap buffer starts at %u", requested_offset, this->overlap_buffer_offset);
 
-	size_t in_buffer_offset = requested_offset - this->overlap_buffer_offset;
-	size_t in_buffer_rest = this->overlap_buffer.size() - in_buffer_offset;
-	DEBUG_ASSERT(this->overlap_buffer.move_front(in_buffer_offset, in_buffer_rest), "Unable to move buffer data at pos %u in ZipDecoder seekg with buffer size %u", in_buffer_offset, this->overlap_buffer.size());
-
+	if (requested_offset <= buffer_end) {
+		size_t in_buffer_offset = requested_offset - this->overlap_buffer_offset;
+		size_t in_buffer_rest = this->overlap_buffer.size() - in_buffer_offset;
+		bool moved = this->overlap_buffer.move_front(in_buffer_offset, in_buffer_rest);
+		DEBUG_ASSERT(moved, "Unable to move buffer data at pos %u in ZipDecoder seekg with buffer size %u", in_buffer_offset, this->overlap_buffer.size());
+	} else {
+		auto to_skip = requested_offset - this->overlap_buffer_offset - this->overlap_buffer.size();
+		this->overlap_buffer.clear();
+		this->overlap_buffer_offset = 0;
+		this->skip(to_skip);
+	}
+	
 	this->offset = requested_offset;
 }
 
