@@ -30,7 +30,11 @@ size_t str_find(const Buffer &string, const byte_array_t &substr)
 
 	// TODO: Bayer-Moore
 
-	return array.find(substr);
+	auto result = array.find(substr);
+	if (result == byte_array_t::npos)
+		return Buffer::npos;
+	else
+		return result;
 }
 
 bool dump(ByteReader &reader, const std::string &filename)
