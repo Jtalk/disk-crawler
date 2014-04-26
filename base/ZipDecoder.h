@@ -24,6 +24,9 @@
 
 #include <archive.h>
 
+#include <list>
+
+// Libarchive developers are not quite clever
 #undef read
 
 class ZipDecoder : public BaseDecoder
@@ -41,22 +44,20 @@ private:
 	
 	archive *archive_state;
 	
-	Buffer buffer;
+	std::list<Buffer> buffers;
 	
 	Buffer overlap_buffer;
 	streampos overlap_buffer_offset;
-	
 	streampos offset;
 	
 	bool is_eof;
-	bool header_read;
 	
 	static ssize_t read_callback(archive *archive_state, void *data_raw, const void **buffer);
 	static int open_callback(archive *archive_state, void *data_raw);
 	static off_t skip_callback(archive *archive_state, void *data_raw, off_t request);
 	
 	void get_overlap(Buffer &buffer, streampos size);
-	void update_overlap(const Buffer &buffer, streampos size_requested);
+	void update_overlap(const Buffer &buffer, streampos old_offset);
 	
 	void init();
 	void finalize();
