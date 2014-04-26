@@ -78,8 +78,9 @@ ssize_t ZipDecoder::read_callback(archive *archive_state, void *data_raw, const 
 	}
 
 	data->buffer.reset(BUFFER_SIZE);
-	auto read = data->stream->read(data->buffer, data->buffer.size());
-	
+	auto read = data->stream->read(data->buffer, BUFFER_SIZE);
+	data->buffer.reset(read);
+
 	logger->verbose("%u bytes is read from archive in ZIP read callback", read);
 	
 	data->buffer.reset(read);
@@ -121,44 +122,53 @@ off_t ZipDecoder::skip_callback(archive*, void* data_raw, off_t request)
 	return new_off - current;
 }
 
-void ZipDecoder::get_overlap(Buffer &buffer)
+void ZipDecoder::get_overlap(Buffer &buffer, streampos size)
 {
 	DEBUG_ASSERT(buffer.empty(), "Overlap buffer is not empty in ZipDecoder overlap getting, size is %u", buffer.size());
 	DEBUG_ASSERT(this->offset >= this->overlap_buffer_offset, "Overlap buffer is not containing enough data: offset is %u, overlap offset is %u", this->offset, this->overlap_buffer_offset);
 	DEBUG_ASSERT(this->offset <= this->overlap_buffer_offset + this->overlap_buffer.size(), "Offset is beyond overlap buffer: offset is %u, buffer end at %u", this->offset, this->overlap_buffer_offset + this->overlap_buffer.size());
 	
 	auto overlap_offset_diff = this->offset - this->overlap_buffer_offset;	
-	buffer.capture(this->overlap_buffer.cbegin() + overlap_offset_diff, this->overlap_buffer.size() - overlap_offset_diff);
+	auto overlap_fetch_size = std::min(this->overlap_buffer.size() - overlap_offset_diff, size);
+	buffer.capture(this->overlap_buffer.cbegin() + overlap_offset_diff, overlap_fetch_size);
 	
 	logger->verbose("Getting buffers overlap in ZIP decoder, size is %u, overlap buffer size is %u", buffer.size(), this->overlap_buffer.size());
 }
 
-void ZipDecoder::update_overlap(const Buffer &buffer)
+void ZipDecoder::update_overlap(const Buffer &buffer, streampos size_requested)
 {
 	streampos overlap_size = buffer.size();
 	
 	logger->verbose("Updating ZIP decoder overlap buffer");
 	logger->verbose("New overlap size is %u", overlap_size);
 	
-	DEBUG_ASSERT(this->offset >= overlap_size, "Offset %u is larger than overlap size %u", this->offset, overlap_size);
+	DEBUG_ASSERT(this->offset >= size_requested, "Offset %u is larger than size requested %u", this->offset, overlap_size);
 	
 	this->overlap_buffer.clear();
 	this->overlap_buffer.capture(buffer.cbegin(), overlap_size);
-	this->overlap_buffer_offset = this->offset - overlap_size;
+	this->overlap_buffer_offset = this->offset - size_requested;
 	
 	logger->verbose("Captured %u bytes from %u size buffer", this->overlap_buffer.size(), buffer.size());
 }
 
 ZipDecoder::streampos ZipDecoder::read(Buffer &buffer, streampos size)
 {
+	logger->verbose("Entering ZipDecoder read, offset is %u, overlap buffer size is %u, size requested is %u", this->offset, this->overlap_buffer.size(), size);
+	
 	if (this->eof()) {
 		return npos;
 	}
 
 	buffer.clear();
 
-	this->get_overlap(buffer);
+	this->get_overlap(buffer, size);
 
+	if (buffer.size() >= size or this->is_eof) {
+		logger->verbose("Leaving ZipDecoder read with overlap-only data, offset is %u, overlap buffer size is %u", this->offset, this->overlap_buffer.size());
+		this->offset += size;
+		return buffer.size();
+	}
+	
 	archive_entry *entry;
 	
 	do {
@@ -194,8 +204,8 @@ ZipDecoder::streampos ZipDecoder::read(Buffer &buffer, streampos size)
 		
 	} while (buffer.size() < size);
 
-	this->offset += buffer.size();
-	this->update_overlap(buffer);
+	this->offset += size;
+	this->update_overlap(buffer, size);
 	
 	return buffer.size();
 }
@@ -262,5 +272,5 @@ ZipDecoder::streampos ZipDecoder::tellg() const
 
 bool ZipDecoder::eof() const
 {
-	return this->is_eof;
+	return this->is_eof and this->overlap_buffer.size() + this->overlap_buffer_offset <= this->offset;
 }

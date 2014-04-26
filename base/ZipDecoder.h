@@ -55,8 +55,8 @@ private:
 	static int open_callback(archive *archive_state, void *data_raw);
 	static off_t skip_callback(archive *archive_state, void *data_raw, off_t request);
 	
-	void get_overlap(Buffer &buffer);
-	void update_overlap(const Buffer &buffer);
+	void get_overlap(Buffer &buffer, streampos size);
+	void update_overlap(const Buffer &buffer, streampos size_requested);
 	
 	void init();
 	void finalize();
