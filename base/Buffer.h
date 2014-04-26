@@ -39,6 +39,16 @@ class Buffer
 		this->offset = 0;
 	}
 
+	void advance(size_t new_length) {
+		if (new_length <= this->real_length) {
+			return;
+		}
+		auto old_buffer = this->buffer;
+		this->buffer = (uint8_t*)malloc(new_length);
+		memcpy(this->buffer, old_buffer, this->length);
+		free(old_buffer);		
+	}
+	
 public:
 	typedef uint8_t* iterator;
 	typedef const uint8_t* const_iterator;
@@ -57,7 +67,7 @@ public:
 		free(this->buffer);
 	}
 
-	void resize(size_t size) {
+	void reset(size_t size) {
 		this->length = size;
 		
 		if (this->real_length < this->length) {
@@ -65,7 +75,7 @@ public:
 			this->reallocate(size);
 		}
 	}
-	
+		
 	void reset_offset() {
 		this->length += this->offset;
 		this->offset = 0;
@@ -74,9 +84,9 @@ public:
 	void capture(const uint8_t *read_buffer, size_t read) {
 		if (this->offset != 0)
 			Log().error("Capturing buffer with non-zero offset %u detected", this->offset);
-		auto old_length = this->length;
-		this->resize(this->length + read);
-		memcpy(this->begin() + old_length, read_buffer, read);
+		this->advance(this->length + read);
+		memcpy(this->buffer + this->length, read_buffer, read);
+		this->length += read;
 	}
 	
 	bool move_front(size_t move_offset, size_t count) {
@@ -85,12 +95,12 @@ public:
 		}
 		
 		this->offset += move_offset;
-		this->resize(count);
+		this->reset(count);
 		return true;
 	}
 	
 	void clear() {
-		this->resize(0);
+		this->reset(0);
 		this->offset = 0;
 	}
 	
@@ -112,5 +122,9 @@ public:
 	
 	size_t size() const {
 		return this->length;
+	}
+	
+	bool empty() const {
+		return this->size() == 0;
 	}
 };

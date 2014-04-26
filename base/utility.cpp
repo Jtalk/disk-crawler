@@ -52,7 +52,7 @@ bool dump(ByteReader &reader, const std::string &filename)
 	while (read > 0 and read != ByteReader::npos) {
 		const char *buffer_raw = reinterpret_cast<const char*>(buffer.cbegin());
 		file.write(buffer_raw, buffer.size());
-		buffer.resize(BUFFER_SIZE);
+		buffer.reset(BUFFER_SIZE);
 		read = reader.read(buffer, buffer.size());
 	}
 	

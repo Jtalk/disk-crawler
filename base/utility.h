@@ -78,14 +78,14 @@ size_t find(Stream &stream, const byte_array_t &to_find)
 	while (!stream.eof() && stream.tellg() != Stream::npos) {
 		auto pos = stream.tellg();
 
-		buffer.resize(BUFFER_SIZE);
+		buffer.reset(BUFFER_SIZE);
 		auto read = stream.read(buffer, buffer.size());
 
 		if (read == Stream::npos) {
 			return Stream::npos;
 		}
 
-		buffer.resize(read);
+		buffer.reset(read);
 
 		auto found_pos = str_find(buffer, to_find);
 

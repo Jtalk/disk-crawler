@@ -77,12 +77,12 @@ ssize_t ZipDecoder::read_callback(archive *archive_state, void *data_raw, const 
 		return 0;
 	}
 
-	data->buffer.resize(BUFFER_SIZE);
+	data->buffer.reset(BUFFER_SIZE);
 	auto read = data->stream->read(data->buffer, data->buffer.size());
 	
 	logger->verbose("%u bytes is read from archive in ZIP read callback", read);
 	
-	data->buffer.resize(read);
+	data->buffer.reset(read);
 	*buffer = data->buffer.begin();
 	return read;
 }
@@ -123,8 +123,8 @@ off_t ZipDecoder::skip_callback(archive*, void* data_raw, off_t request)
 
 void ZipDecoder::get_overlap(Buffer &buffer)
 {
-	auto old_size = buffer.size();
-	
+	DEBUG_ASSERT(not buffer.empty(), "Overlap buffer is not empty in ZipDecoder overlap getting");
+  	
 	buffer.capture(this->overlap_buffer.cbegin(), this->overlap_buffer.size());
 	
 	logger->verbose("Getting buffers overlap in ZIP decoder, size is increasing from %u to %u, overlap buffer size is %u", old_size, buffer.size(), this->overlap_buffer.size());
@@ -215,7 +215,7 @@ void ZipDecoder::skip(streampos amount)
 		streampos new_amount = std::max(int64_t(amount) - int64_t(BUFFER_SIZE), int64_t());
 		streampos current_amount = (amount - new_amount);
 		amount = new_amount;
-		buffer.resize(current_amount);
+		buffer.reset(current_amount);
 		this->read(buffer, current_amount);
 	}
 }

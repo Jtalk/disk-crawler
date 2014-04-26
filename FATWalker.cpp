@@ -50,9 +50,9 @@ FATWalker::possible_matches_t FATWalker::find_by_signatures() const
         while (!feof(this->device) && !ferror(this->device) && ftell(this->device) != -1) {
                 size_t pos = ftell(this->device);
                 
-		buffer.resize(BUFFER_SIZE);
+		buffer.reset(BUFFER_SIZE);
 		auto read_bytes = fread(buffer.begin(), 1, BUFFER_SIZE, this->device);
-		buffer.resize(read_bytes);
+		buffer.reset(read_bytes);
 		
                 for (size_t signature_type = 0; signature_type < MAX_SIGNATURE; signature_type++) {
 			const auto &signature = signatures[signature_type];
