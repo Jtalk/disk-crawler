@@ -99,7 +99,7 @@ public:
 		}
 		
 		this->offset += move_offset;
-		this->reset(count);
+		this->length = count;
 		return true;
 	}
 	
