@@ -142,6 +142,8 @@ void ZipDecoder::update_overlap(const Buffer &buffer)
 	logger->verbose("New overlap size is %u", overlap_size);
 	logger->verbose("In-buffer overlap offset is %u", in_buffer_overlap_offset);
 	
+	DEBUG_ASSERT(this->offset >= overlap_size, "Offset %u is larger than overlap size %u", this->offset, overlap_size);
+	
 	this->overlap_buffer.clear();
 	this->overlap_buffer.capture(buffer.cbegin() + in_buffer_overlap_offset, overlap_size);
 	this->overlap_buffer_offset = this->offset - overlap_size;
@@ -238,7 +240,7 @@ void ZipDecoder::seekg(streampos requested_offset)
 	streampos buffer_end = this->overlap_buffer_offset + this->overlap_buffer.size();
 
 	DEBUG_ASSERT(requested_offset >= this->overlap_buffer_offset, 
-		     "Seeking offset %u in ZipDecoder fails: requested offset is %u, but overlap buffer starts at %u", requested_offset, this->overlap_buffer_offset);
+		     "Seeking offset %u in ZipDecoder fails: requested offset is %u, but overlap buffer starts at %u", requested_offset, requested_offset, this->overlap_buffer_offset);
 
 	if (requested_offset <= buffer_end) {
 		size_t in_buffer_offset = requested_offset - this->overlap_buffer_offset;
