@@ -65,7 +65,7 @@ inline Target to(const byte_array_t &bytes)
 }
 
 template<class Stream>
-size_t find(Stream &stream, const byte_array_t &to_find)
+size_t find(Stream &stream, const byte_array_t &to_find, typename Stream::streampos offset = 0)
 {
 	if (!stream)
 		return Stream::npos;
@@ -73,7 +73,7 @@ size_t find(Stream &stream, const byte_array_t &to_find)
 	long int buffers_overlap = to_find.size();
 
 	Buffer buffer(BUFFER_SIZE);
-	stream.seekg(0);
+	stream.seekg(offset);
 
 	while (!stream.eof() && stream.tellg() != Stream::npos) {
 		auto pos = stream.tellg();
