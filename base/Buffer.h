@@ -67,7 +67,7 @@ public:
 		free(this->buffer);
 	}
 
-	void reset(size_t size) {
+	void reset(size_t size = 0) {
 		this->length = size;
 		
 		if (this->real_length < this->length) {
