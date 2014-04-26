@@ -35,7 +35,8 @@ class FSFileStream;
 class FSWalker
 {
 public:
-	typedef std::pair<BaseDecoder*, size_t> result_t;
+	typedef std::forward_list<size_t> offsets_t;
+	typedef std::pair<BaseDecoder*, offsets_t> result_t;
 	typedef std::list<result_t> results_t;
 
 protected:

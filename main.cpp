@@ -26,15 +26,21 @@ void output(const FSWalker::results_t &results, size_t chunk_size)
 	for (auto & result : results) {
 
 		auto &reader = result.first;
-		auto pos = result.second;
+		uint32_t counter = 0;
+		
+		for (auto pos : result.second) {
+			reader->reset();
+			reader->seekg(pos);
+			Buffer buffer(chunk_size);
+			reader->read(buffer, chunk_size);
+			buffer.begin()[chunk_size] = 0;
 
-		reader->reset();
-		reader->seekg(pos);
-		Buffer buffer(chunk_size);
-		reader->read(buffer, chunk_size);
-		buffer.begin()[chunk_size] = 0;
-
-		logger->info("Found: %s at position %u", (char*)buffer.begin(), pos);
+			logger->info("Found: %s at position %u", (char*)buffer.begin(), pos);
+			
+			++counter;
+		}
+		
+		logger->info("Found %u matches at current decoder", counter);
 	}
 }
 
@@ -73,7 +79,7 @@ int main(int argc, char **argv)
 		return NOT_FOUND;
 	}
 
-	logger->debug("Found %u matches!", found.size());
+	logger->debug("Found %u matched documents!", found.size());
 
 	output(found, length);
 

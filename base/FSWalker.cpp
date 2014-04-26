@@ -81,6 +81,7 @@ FSWalker::results_t FSWalker::find(FSFileStream *stream, SignatureType type, con
 	results_t results;
 	BaseDecoder::streampos offset = 0;
 	bool has_match = false;
+	offsets_t *current_result = nullptr;
 	while(true) {
 		auto found = utility::find(*decoder, to_find, offset);
 
@@ -88,7 +89,12 @@ FSWalker::results_t FSWalker::find(FSFileStream *stream, SignatureType type, con
 			break;
 		}
 		
-		results.emplace_front(decoder, found);
+		if (current_result == nullptr) {
+			auto iter = results.emplace(results.end(), decoder, offsets_t());
+			current_result = &iter->second;
+		}
+		
+		current_result->push_front(offset + found);
 		offset += (found + 1);
 		has_match = true;
 	}
