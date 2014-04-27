@@ -1,6 +1,9 @@
 
 set (CRAWLERBASE_SOURCES
+  Log.cpp
   utility.cpp
+  Buffer.cpp
+  OverlapBuffer.cpp 
   BaseDecoder.cpp
   FSWalker.cpp 
   FSFileStream.cpp
@@ -13,6 +16,7 @@ set (CRAWLERBASE_HEADERS
   Log.h
   utility.h
   Buffer.h
+  OverlapBuffer.h
   BaseDecoder.h
   FSWalker.h 
   FSFileStream.h

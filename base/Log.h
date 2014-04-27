@@ -26,71 +26,44 @@
 
 class Log
 {
+	friend Log* logger();
+	
 	FILE *descriptor;
+	static Log *logger;
 	
 public:
-	Log(): descriptor(stdout)
-	{}
+	Log(): descriptor(stdout) {
+		Log::logger = this;
+	}
 	
-	Log(const std::string &name): descriptor(fopen(name.c_str(), "a"))
-	{}
+	Log(const std::string &name): descriptor(fopen(name.c_str(), "a")) {
+		Log::logger = this;
+	}
 	
 	~Log() {
 		if (this->descriptor != stdout)
 			fclose(this->descriptor);
 	}
 	
-	void warning(const char *fmt, ...) {
-		va_list args;
-		va_start(args, fmt);
-		fprintf(this->descriptor, "Warning: ");
-		vfprintf(this->descriptor, fmt, args);
-		fputs("\n", this->descriptor);
-		va_end(args);		
-	}
-	
-	void error(const char *fmt, ...) {
-		va_list args;
-		va_start(args, fmt);
-		fprintf(this->descriptor, "Error: ");
-		vfprintf(this->descriptor, fmt, args);
-		fputs("\n", this->descriptor);
-		va_end(args);
-		abort();
-	}
-	
-	void info(const char *fmt, ...) {
-		va_list args;
-		va_start(args, fmt);
-		vfprintf(this->descriptor, fmt, args);
-		fputs("\n", this->descriptor);
-		va_end(args);
-	}
+	void warning(const char *fmt, ...);
+	void error(const char *fmt, ...);
+	void info(const char *fmt, ...);
 	
 #ifdef DEBUG
-	void debug(const char *fmt, ...) {
-		va_list args;
-		va_start(args, fmt);
-		fprintf(this->descriptor, "Debug: ");
-		vfprintf(this->descriptor, fmt, args);
-		fputs("\n", this->descriptor);
-		va_end(args);		
-	}
+	void debug(const char *fmt, ...);
 #else
 	void debug(const char*, ...) 
 	{}
 #endif
+
 #ifdef VERBOSE
-	void verbose(const char *fmt, ...) {
-		va_list args;
-		va_start(args, fmt);
-		fprintf(this->descriptor, "Verbose: ");
-		vfprintf(this->descriptor, fmt, args);
-		fputs("\n", this->descriptor);
-		va_end(args);		
-	}
+	void verbose(const char *fmt, ...);
 #else
 	void verbose(const char*, ...) 
 	{}
 #endif
 };
+
+inline Log *logger() {
+	return Log::logger;
+}

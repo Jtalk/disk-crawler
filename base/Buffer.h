@@ -32,23 +32,9 @@ class Buffer
 	size_t real_length;
 	size_t offset;
 
-	void reallocate(size_t new_length){
-		free(this->buffer);
-		this->buffer = (uint8_t*)malloc(new_length);
-		this->real_length = new_length;
-		this->offset = 0;
-	}
+	void advance(size_t new_length);
+	void reallocate(size_t new_length);
 
-	void advance(size_t new_length) {
-		if (new_length <= this->real_length) {
-			return;
-		}
-		auto old_buffer = this->buffer;
-		this->buffer = (uint8_t*)malloc(new_length);
-		memcpy(this->buffer, old_buffer, this->length);
-		free(old_buffer);		
-	}
-	
 public:
 	typedef uint8_t* iterator;
 	typedef const uint8_t* const_iterator;
@@ -57,50 +43,18 @@ public:
 	
 	Buffer() = delete;
 	
-	Buffer(size_t count) {
-		this->buffer = (uint8_t*)malloc(count);
-		this->real_length = this->length = count;
-		this->offset = 0;
-	}
+	explicit Buffer(size_t count);
+	~Buffer();
 	
-	~Buffer() {
-		free(this->buffer);
-	}
-
-	void reset(size_t size = 0) {
-		this->length = size;
-		
-		if (this->real_length < this->length) {
-			this->offset = 0;
-			this->reallocate(size);
-		}
-	}
-		
-	void reset_offset() {
-		this->length += this->offset;
-		this->offset = 0;
-	}
+	void reset(size_t size = 0);
+	void reset_offset();
 	
-	void capture(const uint8_t *read_buffer, size_t read) {
-		if (this->offset != 0)
-			Log().error("Capturing buffer with non-zero offset %u detected", this->offset);
-		this->advance(this->length + read);
-		memcpy(this->buffer + this->length, read_buffer, read);
-		this->length += read;
-	}
+	bool move_front(size_t move_offset, size_t count);
+	bool move_front(size_t move_offset);
 	
+	void capture(const uint8_t *read_buffer, size_t read);
 	void capture(const Buffer &other) {
 		this->capture(other.buffer, other.length);
-	}
-	
-	bool move_front(size_t move_offset, size_t count) {
-		if (move_offset + count > this->length) {
-			return false;
-		}
-		
-		this->offset += move_offset;
-		this->length = count;
-		return true;
 	}
 	
 	void clear() {
