@@ -92,8 +92,8 @@ FSWalker::results_t FSWalker::find(FSFileStream *stream, SignatureType type, con
 			current_result = &iter->second;
 		}
 		
-		current_result->push_back(offset + found);
-		offset += (found + 1);
+		current_result->push_back(found);
+		offset = (found + 1);
 		has_match = true;
 	}
 	
