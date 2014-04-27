@@ -175,8 +175,8 @@ ZipDecoder::streampos ZipDecoder::read(Buffer &buffer, streampos size)
 			this->header_read = true;
 		}
 		
-		Buffer tmp(BUFFER_SIZE);
-		size_t chunk_size = std::min(BUFFER_SIZE, size);
+		size_t chunk_size = std::min(BUFFER_SIZE, size - buffer.size());
+		Buffer tmp(chunk_size);
 		ssize_t read = archive_read_data(this->archive_state, tmp.begin(), chunk_size);
 		
 		if (read == 0) {
