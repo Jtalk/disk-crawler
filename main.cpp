@@ -8,7 +8,7 @@
 #include <cinttypes>
 #include <cstring>
 
-const char *const USAGE = "Usage: crawler DEVICE TO_FIND";
+const char *const USAGE = "Usage: %s DEVICE TO_FIND";
 
 using namespace std;
 
@@ -29,7 +29,7 @@ void output(const FSWalker::results_t &results, size_t chunk_size)
 		for (auto pos : result.second) {
 			reader->reset();
 			reader->seekg(pos);
-			Buffer buffer(chunk_size);
+			Buffer buffer(chunk_size + 1);
 			reader->read(buffer, chunk_size);
 			buffer.begin()[chunk_size] = 0;
 
@@ -59,7 +59,7 @@ FSWalker::results_t walk(const string &filename, const byte_array_t &to_find)
 int main(int argc, char **argv)
 {
 	if (argc < 3) {
-		cout << USAGE << endl;
+		printf(USAGE, argv[0]);
 		return NOT_ENOUGH_ARGUMENTS;
 	}
 
