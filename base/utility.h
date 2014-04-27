@@ -34,12 +34,10 @@
 
 static const int PAUSE_DURATIION_MSEC = 1;
 
-extern Log *logger;
-
 #define RELEASE_ASSERT(EXPR, FORMAT, ...) \
 	do { \
 		if (!(EXPR)) { \
-			logger->error(FORMAT, __VA_ARGS__); \
+			logger()->error(FORMAT, __VA_ARGS__); \
 		} \
 	} while(0)
 

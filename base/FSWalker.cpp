@@ -28,8 +28,6 @@
 
 #include <cstdio>
 
-extern Log *logger;
-
 const FSWalker::signatures_t FSWalker::signatures(FSWalker::make_signatures());
 
 FSWalker::FSWalker(const std::string &device_name):
@@ -94,7 +92,7 @@ FSWalker::results_t FSWalker::find(FSFileStream *stream, SignatureType type, con
 			current_result = &iter->second;
 		}
 		
-		current_result->push_front(offset + found);
+		current_result->push_back(offset + found);
 		offset += (found + 1);
 		has_match = true;
 	}
@@ -111,24 +109,24 @@ FSWalker::results_t FSWalker::find(const byte_array_t& to_find)
 	auto signature_matches = this->find_by_signatures();
 
 	if (signature_matches.empty())
-		logger->debug("No signatures detected");
+		logger()->debug("No signatures detected");
 	else
-		logger->debug("%u signatures found", signature_matches.size());
+		logger()->debug("%u signatures found", signature_matches.size());
 
 	results_t found;
 
 	for (auto & match : signature_matches) {
-		logger->debug("Tracing back %u signature with %u offset", match.signature, match.offset);
+		logger()->debug("Tracing back %u signature with %u offset", match.signature, match.offset);
 		
 		auto file_stream = this->traceback(match.offset);
 
 		if (file_stream == nullptr) {
-			logger->debug("Invalid file stream traceback for this signature");
+			logger()->debug("Invalid file stream traceback for this signature");
 			continue;
 		}
 
 		auto found_by_signature = this->find(file_stream, match.signature, to_find);
-		logger->debug("Found %u items by signature %u", found_by_signature.size(), match.signature);
+		logger()->debug("Found %u items by signature %u", found_by_signature.size(), match.signature);
 		found.splice(found.end(), found_by_signature);
 	}
 

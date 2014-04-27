@@ -20,8 +20,6 @@
 
 #include "Log.h"
 
-extern Log *logger;
-
 namespace utility {
 	
 size_t str_find(const Buffer &string, const byte_array_t &substr)
@@ -44,7 +42,7 @@ bool dump(ByteReader &reader, const std::string &filename)
 	fstream file(filename, ios_base::binary | ios_base::out | ios_base::trunc);
 	
 	if (not file.is_open()) {
-		logger->warning("File %s cannot be opened for write", filename.c_str());
+		logger()->warning("File %s cannot be opened for write", filename.c_str());
 		return false;
 	}
 	

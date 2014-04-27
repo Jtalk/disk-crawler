@@ -12,8 +12,6 @@ const char *const USAGE = "Usage: crawler DEVICE TO_FIND";
 
 using namespace std;
 
-Log *logger;
-
 enum Status {
 	SUCCESS = 0,
 	ACCESS_DENIED = -1,
@@ -35,12 +33,12 @@ void output(const FSWalker::results_t &results, size_t chunk_size)
 			reader->read(buffer, chunk_size);
 			buffer.begin()[chunk_size] = 0;
 
-			logger->info("Found: %s at position %u", (char*)buffer.begin(), pos);
+			logger()->info("Found: %s at position %u", (char*)buffer.begin(), pos);
 			
 			++counter;
 		}
 		
-		logger->info("Found %u matches at current decoder", counter);
+		logger()->info("Found %u matches at current decoder", counter);
 	}
 }
 
@@ -49,7 +47,7 @@ FSWalker::results_t walk(const string &filename, const byte_array_t &to_find)
 	FATWalker walker(filename);
 
 	if (!walker) {
-		logger->warning("Access denied");
+		logger()->warning("Access denied");
 		exit(ACCESS_DENIED);
 	}
 	
@@ -65,7 +63,7 @@ int main(int argc, char **argv)
 		return NOT_ENOUGH_ARGUMENTS;
 	}
 
-	logger = new Log();
+	Log *logger_object = new Log();
 	
 	string filename(argv[1]);
 	
@@ -75,18 +73,18 @@ int main(int argc, char **argv)
 	auto && found = walk(filename, to_find);
 
 	if (found.empty()) {
-		logger->warning("Not found");
+		logger()->warning("Not found");
 		return NOT_FOUND;
 	}
 
-	logger->debug("Found %u matched documents!", found.size());
+	logger()->debug("Found %u matched documents!", found.size());
 
 	output(found, length);
 
 	for (auto &result : found)
 		delete result.first;
 	
-	delete logger;
+	delete logger_object;
 	
 	return SUCCESS;
 }

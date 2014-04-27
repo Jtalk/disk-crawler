@@ -26,8 +26,6 @@
 #include <cmath>
 #include <cstdlib>
 
-extern Log *logger;
-
 enum FATOffsets : size_t {
 	SECTOR_SIZE = 0x0B,
 	CLUSTER_SIZE = 0x0D,
@@ -81,7 +79,7 @@ FATFileStream::streampos FATFileStream::fat_from_n(uint32_t number)
 uint32_t FATFileStream::n_from_data(streampos offset)
 {
 	if (offset < this->device.data_offset) {
-		logger->warning("Invalid offset %u is converting into data cluster number", offset);
+		logger()->warning("Invalid offset %u is converting into data cluster number", offset);
 		return 0;
 	}
 	
@@ -93,7 +91,7 @@ uint32_t FATFileStream::n_from_data(streampos offset)
 uint32_t FATFileStream::n_from_fat(streampos offset)
 {
 	if (offset < this->device.fat_offset or offset >= this->device.fat_offset * this->device.fat_size) {
-		logger->warning("Invalid offset %u is converting into fat cluster number", offset);
+		logger()->warning("Invalid offset %u is converting into fat cluster number", offset);
 		return 0;
 	}
 	
@@ -255,7 +253,7 @@ FATFileStream::streampos FATFileStream::read(Buffer &buffer, streampos size)
 				
 		streampos read = fread(buffer.begin() + total_read, 1, rest, this->stream);
 
-		logger->verbose("Successfuly read %u bytes from FAT file", read);
+		logger()->verbose("Successfuly read %u bytes from FAT file", read);
 		
 		total_read += read;
 
@@ -263,10 +261,10 @@ FATFileStream::streampos FATFileStream::read(Buffer &buffer, streampos size)
 
 		auto old_pos = this->tellg();
 		this->update_cluster(this->tellg());
-		logger->verbose("Updating FAT file position from %u to %u", old_pos, this->tellg());
+		logger()->verbose("Updating FAT file position from %u to %u", old_pos, this->tellg());
 		
 		if (this->eof()) {
-			logger->verbose("EOF is occured in FAT file reader");
+			logger()->verbose("EOF is occured in FAT file reader");
 			break;
 		}
 	}
