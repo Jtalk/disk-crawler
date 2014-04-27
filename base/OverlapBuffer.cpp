@@ -49,8 +49,6 @@ size_t OverlapBuffer::extract(Buffer &target, size_t size, size_t stream_offset)
 	
 	auto extraction_size = std::min(size, this->size());
 	target.capture(this->cbegin(), extraction_size);
-	this->offset += extraction_size;
-	this->move_front(extraction_size, this->size() - extraction_size);
 	
 	return extraction_size;
 }

@@ -51,6 +51,7 @@ private:
 	streampos offset;
 	
 	bool is_eof;
+	bool header_read;
 	
 	static ssize_t read_callback(archive *archive_state, void *data_raw, const void **buffer);
 	static int open_callback(archive *archive_state, void *data_raw);

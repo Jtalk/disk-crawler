@@ -28,7 +28,7 @@ const ZipDecoder::streampos ZipDecoder::BUFFER_OVERLAP;
 
 ZipDecoder::ZipDecoder(const BaseDecoder::stream_t& stream):
 	BaseDecoder(stream), overlap(0),
-	offset(0), is_eof(false)
+	offset(0), is_eof(false), header_read(false)
 {
 	this->init();
 }
@@ -84,6 +84,12 @@ ssize_t ZipDecoder::read_callback(archive *archive_state, void *data_raw, const 
 
 	auto inserted = data->buffers.emplace(data->buffers.end(), BUFFER_SIZE);
 	auto read = data->stream->read(*inserted, BUFFER_SIZE);
+	
+	if (read == ByteReader::npos) {
+		logger()->verbose("Stream NPOS in ZIP read callback");
+		return 0;		
+	}
+	
 	inserted->shrink(read);
 
 	logger()->verbose("%u bytes is read from archive in ZIP read callback", read);
@@ -148,41 +154,47 @@ ZipDecoder::streampos ZipDecoder::read(Buffer &buffer, streampos size)
 	archive_entry *entry;
 	
 	do {
-		auto result = archive_read_next_header(this->archive_state, &entry);
+		if (not this->header_read) {
+			auto result = archive_read_next_header(this->archive_state, &entry);
+			
+			logger()->verbose("Archive header extracted, pathname is %s", archive_entry_pathname(entry));
+			
+			if (result == ARCHIVE_EOF) {
+				logger()->verbose("End of archive is reached in ZIP decode header reader");
+				this->is_eof = true;
+				break;
+			} else if (result == ARCHIVE_RETRY) {
+				logger()->warning("Archive retry requested in header read");
+				continue;
+			} else if (result != ARCHIVE_OK) {
+				logger()->warning("Error %d while reading archive chunk in header: %s", result, archive_error_string(this->archive_state));
+				this->is_eof = true;
+				break;
+			}
 		
-		logger()->verbose("Archive header extracted, pathname is %s", archive_entry_pathname(entry));
-		
-		if (result == ARCHIVE_EOF) {
-			logger()->verbose("End of archive is reached in ZIP decode header reader");
-			this->is_eof = true;
-			break;
-		} else if (result == ARCHIVE_RETRY) {
-			logger()->warning("Archive retry requested in header read");
-			continue;
-		} else if (result != ARCHIVE_OK) {
-			logger()->warning("Error %d while reading archive chunk in header: %s", result, archive_error_string(this->archive_state));
-			this->is_eof = true;
-			break;
+			this->header_read = true;
 		}
 		
 		Buffer tmp(BUFFER_SIZE);
-		size_t chunk_size = std::min(BUFFER_SIZE, size - buffer.size());
+		size_t chunk_size = std::min(BUFFER_SIZE, size);
 		ssize_t read = archive_read_data(this->archive_state, tmp.begin(), chunk_size);
 		
 		if (read == 0) {
-			logger()->verbose("End of archive is reached in ZIP decoder block reader");
+			logger()->verbose("End of block is reached in ZIP decoder block reader");
 			// Libarchive says it's an end of file, but that's not true. It has just got to the entry final
+			this->header_read = false;
 			continue;
 		} else if (read == ARCHIVE_RETRY) {
 			logger()->warning("Archive retry is returned");
-			break;
-		} else if (result == ARCHIVE_WARN or result == ARCHIVE_FATAL) {
-			logger()->warning("Error %d while reading archive chunk in block: %s", result, archive_error_string(this->archive_state));
+			continue;
+		} else if (read == ARCHIVE_WARN or read == ARCHIVE_FATAL) {
+			logger()->warning("Error %d while reading archive chunk in block: %s", read, archive_error_string(this->archive_state));
 			this->is_eof = true;
 			break;
 		}
 		
-		buffer.capture(tmp.cbegin(), read);
+		tmp.shrink(read);		
+		buffer.capture(tmp);
 		
 	} while (buffer.size() < size);
 
@@ -215,6 +227,7 @@ void ZipDecoder::reset()
 	this->init();
 	
 	this->is_eof = false;
+	this->header_read = false;
 	
 	this->overlap.clear();
 	this->offset = 0;
@@ -243,5 +256,5 @@ ZipDecoder::streampos ZipDecoder::tellg() const
 
 bool ZipDecoder::eof() const
 {
-	return this->is_eof and not this->overlap.suitable(this->offset) and not this->overlap.empty();
+	return this->is_eof and (not this->overlap.suitable(this->offset) or this->overlap.empty());
 }

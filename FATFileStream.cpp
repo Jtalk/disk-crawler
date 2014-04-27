@@ -237,9 +237,7 @@ void FATFileStream::update_cluster(streampos file_pos)
 
 FATFileStream::streampos FATFileStream::read(Buffer &buffer, streampos size)
 {
-	if (buffer.size() < size) {
-		return npos;
-	}
+	buffer.reset(size);
 	
 	if (this->eof()) {
 		return npos;
@@ -255,8 +253,8 @@ FATFileStream::streampos FATFileStream::read(Buffer &buffer, streampos size)
 
 		logger()->verbose("Successfuly read %u bytes from FAT file", read);
 		
+		buffer.shrink(read);
 		total_read += read;
-
 		this->current_pos += read;
 
 		auto old_pos = this->tellg();
