@@ -20,6 +20,8 @@
 
 #include "OverlapBuffer.h"
 
+#include "utility.h"
+
 OverlapBuffer::OverlapBuffer(size_t size):
 	Buffer(size), offset(0)
 {}
@@ -29,7 +31,9 @@ OverlapBuffer::~OverlapBuffer()
 
 void OverlapBuffer::capture(const Buffer &other, size_t from_start_offset, size_t buffer_start_offset)
 {
-	this->reset(other.size());
+	DEBUG_ASSERT(other.size() >= from_start_offset, "Offset from captured buffer start is %u while size itself is %u", from_start_offset, other.size());
+	
+	this->reset(other.size() - from_start_offset);
 	this->capture(other.cbegin() + from_start_offset, other.size() - from_start_offset);
 	this->offset = buffer_start_offset;
 }

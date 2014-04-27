@@ -84,7 +84,7 @@ ssize_t ZipDecoder::read_callback(archive *archive_state, void *data_raw, const 
 
 	auto inserted = data->buffers.emplace(data->buffers.end(), BUFFER_SIZE);
 	auto read = data->stream->read(*inserted, BUFFER_SIZE);
-	inserted->reset(read);
+	inserted->shrink(read);
 
 	logger()->verbose("%u bytes is read from archive in ZIP read callback", read);
 	

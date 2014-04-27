@@ -46,6 +46,10 @@ public:
 	explicit Buffer(size_t count);
 	~Buffer();
 	
+	void shrink(size_t size) {
+		this->length = std::min(this->real_length, size);
+	}
+	
 	void reset(size_t size = 0);
 	void reset_offset();
 	
@@ -58,7 +62,7 @@ public:
 	}
 	
 	void clear() {
-		this->reset(0);
+		this->reset();
 		this->offset = 0;
 	}
 	
@@ -67,19 +71,19 @@ public:
 	}
 	
 	iterator end() {
-		return this->buffer + this->length;
+		return this->begin() + this->length;
 	}
 	
 	const_iterator cbegin() const {
-		return this->buffer + offset;
+		return this->buffer + this->offset;
 	}
 	
 	const_iterator cend() const {
-		return this->buffer + this->length;
+		return this->cbegin() + this->length;
 	}
 	
 	size_t size() const {
-		return this->length - this->offset;
+		return this->length;
 	}
 	
 	bool empty() const {

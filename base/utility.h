@@ -83,7 +83,7 @@ size_t find(Stream &stream, const byte_array_t &to_find, typename Stream::stream
 			return Stream::npos;
 		}
 
-		buffer.reset(read);
+		buffer.shrink(read);
 
 		auto found_pos = str_find(buffer, to_find);
 

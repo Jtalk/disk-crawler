@@ -43,7 +43,8 @@ void Buffer::advance(size_t new_length)
 Buffer::Buffer(size_t count) 
 {
 	this->buffer = (uint8_t*)malloc(count);
-	this->real_length = this->length = count;
+	this->real_length = count;
+	this->length = 0;
 	this->offset = 0;
 }
 
@@ -54,10 +55,10 @@ Buffer::~Buffer()
 
 void Buffer::reset(size_t size) 
 {
-	this->length = size;
+	this->length = 0;
 	this->offset = 0;
 	
-	if (this->real_length < this->length) {
+	if (this->real_length < size) {
 		this->reallocate(size);
 	}
 }
