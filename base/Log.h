@@ -48,18 +48,12 @@ public:
 	void warning(const char *fmt, ...);
 	void error(const char *fmt, ...);
 	void info(const char *fmt, ...);
+	void verbose(const char *fmt, ...);
 	
 #ifdef DEBUG
 	void debug(const char *fmt, ...);
 #else
 	void debug(const char*, ...) 
-	{}
-#endif
-
-#ifdef VERBOSE
-	void verbose(const char *fmt, ...);
-#else
-	void verbose(const char*, ...) 
 	{}
 #endif
 };

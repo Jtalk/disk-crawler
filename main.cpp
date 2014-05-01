@@ -1,14 +1,20 @@
 #include "FATWalker.h"
 
 #include "base/BaseDecoder.h"
+#include "base/Config.h"
 #include "base/Log.h"
+
+#include "base/cmdopts.h"
 
 #include <iostream>
 
 #include <cinttypes>
 #include <cstring>
 
-static const char *const USAGE = "Usage: %s DEVICE TO_FIND";
+static const char *const USAGE = "Usage: %s OPTIONS DEVICE TO_FIND\n\
+OPTIONS:\n\
+	\t-v|--verbose: verbose output\n\
+";
 static const size_t POSITION_OFFSET = 10;
 
 using namespace std;
@@ -69,21 +75,19 @@ FSWalker::results_t walk(const string &filename, const byte_array_t &to_find)
 	return found;
 }
 
-int main(int argc, char **argv)
+int main(int argc, char *argv[])
 {
 	if (argc < 3) {
 		printf(USAGE, argv[0]);
 		return NOT_ENOUGH_ARGUMENTS;
 	}
 
-	Log *logger_object = new Log();
+	Config config_object;
+	Log logger_object;
 	
-	string filename(argv[1]);
+	Options opts = cmdopts(argc, (const char**)argv);
 	
-	auto length = strlen(argv[2]);
-	byte_array_t to_find((uint8_t*)argv[2], length);
-	
-	auto && found = walk(filename, to_find);
+	auto && found = walk(opts.filename, opts.to_find);
 
 	if (found.empty()) {
 		logger()->warning("Not found");
@@ -92,12 +96,10 @@ int main(int argc, char **argv)
 
 	logger()->debug("Found %u matched documents!", found.size());
 
-	output(found, length);
+	output(found, opts.to_find.length());
 
 	for (auto &result : found)
 		delete result.first;
-	
-	delete logger_object;
 	
 	return SUCCESS;
 }

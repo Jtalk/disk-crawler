@@ -18,6 +18,8 @@
 
 #include "Log.h"
 	
+#include "Config.h"
+	
 Log *Log::logger;
 	
 void Log::warning(const char *fmt, ...) {
@@ -57,8 +59,10 @@ void Log::debug(const char *fmt, ...) {
 	va_end(args);		
 }
 #endif
-#ifdef VERBOSE
 void Log::verbose(const char *fmt, ...) {
+	if (not config()->VERBOSE) {
+		return;
+	}
 	va_list args;
 	va_start(args, fmt);
 	fprintf(this->descriptor, "Verbose: ");
@@ -66,4 +70,3 @@ void Log::verbose(const char *fmt, ...) {
 	fputs("\n", this->descriptor);
 	va_end(args);		
 }
-#endif

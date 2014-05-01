@@ -1,5 +1,7 @@
 
 set (CRAWLERBASE_SOURCES
+  cmdopts.cpp 
+  Config.cpp
   Log.cpp
   utility.cpp
   Buffer.cpp
@@ -11,8 +13,10 @@ set (CRAWLERBASE_SOURCES
   PlainDecoder.cpp 
 )
 
-set (CRAWLERBASE_HEADERS 
+set (CRAWLERBASE_HEADERS
+  cmdopts.h 
   ByteReader.h 
+  Config.h
   Log.h
   utility.h
   Buffer.h
