@@ -203,14 +203,16 @@ FATFileStream::streampos FATFileStream::find_next_cluster(streampos source_clust
 {
 	size_t number = this->n_from_data(source_cluster);
 
-	auto entry = this->read_fat(number + FAT_SERVICE_ENTRIES_COUNT) - FAT_SERVICE_ENTRIES_COUNT;
+	auto entry = this->read_fat(number + FAT_SERVICE_ENTRIES_COUNT);
 
-	if (entry == 0)
+	if (entry == 0) {
 		return source_cluster + this->device.cluster_size;
-	else if (entry >= this->device.eoc)
+	} else if (entry >= this->device.eoc) {
 		return npos;
-	else
+	} else {
+		entry -= FAT_SERVICE_ENTRIES_COUNT;
 		return this->device.data_offset + streampos(this->device.cluster_size * entry);
+	}
 }
 
 void FATFileStream::update_cluster(streampos file_pos)
