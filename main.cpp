@@ -8,7 +8,8 @@
 #include <cinttypes>
 #include <cstring>
 
-const char *const USAGE = "Usage: %s DEVICE TO_FIND";
+static const char *const USAGE = "Usage: %s DEVICE TO_FIND";
+static const size_t POSITION_OFFSET = 10;
 
 using namespace std;
 
@@ -26,14 +27,26 @@ void output(const FSWalker::results_t &results, size_t chunk_size)
 		auto &reader = result.first;
 		uint32_t counter = 0;
 		
-		for (auto pos : result.second) {
+		for (auto found_pos : result.second) {
 			reader->reset();
+			
+			size_t pos;
+			if (found_pos > POSITION_OFFSET) {
+				pos = found_pos - POSITION_OFFSET;
+			} else {
+				pos = 0;
+			}
+			
 			reader->seekg(pos);
-			Buffer buffer(chunk_size + 1);
-			reader->read(buffer, chunk_size);
-			buffer.begin()[chunk_size] = 0;
+			Buffer buffer(chunk_size + 2 * POSITION_OFFSET + 1);
+			auto read = reader->read(buffer, chunk_size + 2 * POSITION_OFFSET);
+			buffer.begin()[read] = 0;
 
-			logger()->info("Found: %s at position %u", (char*)buffer.begin(), pos);
+			logger()->info(	"\n"
+					"========================= Found: =========================\n"
+					"%s\n"
+					"==========================================================\n"
+					"Position: %u", (char*)buffer.begin(), pos);
 			
 			++counter;
 		}
