@@ -32,6 +32,8 @@ public:
 
 	ByteReader() = default;
 	ByteReader(const ByteReader& other) = default;
+	virtual ~ByteReader() 
+	{}
 
 	virtual streampos read(Buffer &buffer, streampos size) = 0;
 	
@@ -40,4 +42,8 @@ public:
         virtual bool eof() const = 0;
         
 	virtual bool operator !() const = 0;
+	
+	virtual void reset() {
+		this->seekg(0);
+	}
 };

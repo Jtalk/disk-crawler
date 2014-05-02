@@ -42,5 +42,5 @@ void PlainFileStream::seekg(ByteReader::streampos offset) {
 
 ByteReader::streampos PlainFileStream::read(Buffer &buffer, ByteReader::streampos size) {
 	buffer.reset(size);
-	return fread(buffer.begin(), size, 1, this->stream);
+	return fread(buffer.begin(), 1, size, this->stream);
 }

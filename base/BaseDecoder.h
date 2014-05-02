@@ -38,7 +38,5 @@ public:
 	BaseDecoder(const stream_t &stream);
 	virtual ~BaseDecoder();
 
-	virtual void reset() = 0;
-	
 	virtual bool operator !() const override final;
 };

@@ -37,6 +37,7 @@ public:
 	typedef std::list<size_t> offsets_t;
 	typedef std::pair<ByteReader*, offsets_t> result_t;
 	typedef std::list<result_t> results_t;
+	typedef std::list<FSWalker*> walkers_t;
 
 protected:
 	enum SignatureType {

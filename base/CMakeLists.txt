@@ -1,12 +1,15 @@
 
 set (CRAWLERBASE_SOURCES
-  cmdopts.cpp 
+  cmdopts.cpp
+  fspick.cpp 
   Config.cpp
   Log.cpp
   utility.cpp
   Buffer.cpp
   OverlapBuffer.cpp 
   BaseDecoder.cpp
+  FATFileStream.cpp 
+  FATWalker.cpp 
   FSWalker.cpp 
   FSFileStream.cpp
   ZipDecoder.cpp 
@@ -17,6 +20,7 @@ set (CRAWLERBASE_SOURCES
 
 set (CRAWLERBASE_HEADERS 
   cmdopts.h 
+  fspick.h
   ByteReader.h 
   Config.h
   Log.h
@@ -24,6 +28,8 @@ set (CRAWLERBASE_HEADERS
   Buffer.h
   OverlapBuffer.h
   BaseDecoder.h
+  FATFileStream.h
+  FATWalker.h
   FSWalker.h 
   FSFileStream.h
   ZipDecoder.h 

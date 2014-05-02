@@ -21,7 +21,7 @@
 
 #include "FSWalker.h"
 
-class PlainWalker : public FSWalker {
+struct PlainWalker : public FSWalker {
 	PlainWalker(const std::string &device_name);
 
 	virtual results_t find(const byte_array_t& to_find) override;

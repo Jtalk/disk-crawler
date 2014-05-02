@@ -34,13 +34,15 @@ FSWalker::results_t PlainWalker::find(const byte_array_t &to_find) {
 	results.push_back({decoder, {}});
 	
 	auto &offsets = results.front().second;
+	ByteReader::streampos offset = 0;
 	
 	while (not decoder->eof()) {
-		auto pos = utility::find(*decoder, to_find);
+		auto pos = utility::find(*decoder, to_find, offset);
 		if (pos == PlainFileStream::npos) {
 			break;
 		} else {
 			offsets.push_back(pos);
+			offset = pos + 1;
 		} 
 	}
 	

@@ -1,7 +1,24 @@
-#include "FATWalker.h"
+/*
+ *  Disk Crawler library.
+ *  Copyright (C) 2013  Jtalk <me@jtalk.me>
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "base/BaseDecoder.h"
 #include "base/Config.h"
+#include "base/FATWalker.h"
 #include "base/Log.h"
 #include "base/PlainWalker.h"
 
@@ -67,19 +84,19 @@ Status walk(const string &filename, const byte_array_t &to_find, FSWalker::resul
 
 	auto plain = new PlainWalker(filename);
 	if (not plain->operator!()) {
-		walkers->push_back(plain);
+		walkers.push_back(plain);
 	} else {
 		delete plain;
 		logger()->warning("Access Denied at %s", filename.c_str());
 		return ACCESS_DENIED;
 	}
 
-	walkers.splice(fspick(filename));
+	walkers.splice(walkers.end(), fspick(filename));
 
 	for (auto walker : walkers) {
 		auto && found = walker->find(to_find);
 		if (not found.empty()) {
-			results.splice(found);
+			results.splice(results.end(), found);
 		} else {
 			delete walker;
 		}
@@ -88,6 +105,8 @@ Status walk(const string &filename, const byte_array_t &to_find, FSWalker::resul
 	if (results.empty()) {
 		logger()->warning("Not found");
 		return NOT_FOUND;
+	} else {
+		return SUCCESS;
 	}
 }
 
