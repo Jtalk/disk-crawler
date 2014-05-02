@@ -29,21 +29,21 @@
 #include <utility>
 
 class BaseDecoder;
+class ByteReader;
 class FSFileStream;
 
-class FSWalker
-{
+class FSWalker {
 public:
 	typedef std::list<size_t> offsets_t;
-	typedef std::pair<BaseDecoder*, offsets_t> result_t;
+	typedef std::pair<ByteReader*, offsets_t> result_t;
 	typedef std::list<result_t> results_t;
 
 protected:
 	enum SignatureType {
-		ZIP = 0,
-		RAR,
+	        ZIP = 0,
+	        RAR,
 
-		MAX_SIGNATURE
+	        MAX_SIGNATURE
 	};
 
 	struct PossibleMatch {
@@ -77,12 +77,11 @@ public:
 	FSWalker(const std::string &device_name);
 	virtual ~FSWalker();
 
-	results_t find(const byte_array_t &to_find);
+	virtual results_t find(const byte_array_t &to_find);
 
 	bool operator !() const;
 };
 
-inline constexpr const uint8_t* operator "" _us(const char *s, size_t)
-{
+inline constexpr const uint8_t* operator "" _us(const char *s, size_t) {
 	return (const uint8_t*) s;
 }

@@ -11,9 +11,11 @@ set (CRAWLERBASE_SOURCES
   FSFileStream.cpp
   ZipDecoder.cpp 
   PlainDecoder.cpp 
+  PlainFileStream.cpp 
+  PlainWalker.cpp
 )
 
-set (CRAWLERBASE_HEADERS
+set (CRAWLERBASE_HEADERS 
   cmdopts.h 
   ByteReader.h 
   Config.h
@@ -26,6 +28,8 @@ set (CRAWLERBASE_HEADERS
   FSFileStream.h
   ZipDecoder.h 
   PlainDecoder.h 
+  PlainFileStream.h
+  PlainWalker.h
 )
 
 add_library(crawlerbase  ${CRAWLERBASE_SOURCES} ${CRAWLERBASE_HEADERS})
