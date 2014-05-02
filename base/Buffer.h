@@ -52,6 +52,7 @@ public:
 	
 	void reset(size_t size = 0);
 	void reset_offset();
+	void resize(size_t size);
 	
 	bool move_front(size_t move_offset, size_t count);
 	bool move_front(size_t move_offset);
@@ -59,6 +60,13 @@ public:
 	void capture(const uint8_t *read_buffer, size_t read);
 	void capture(const Buffer &other) {
 		this->capture(other.buffer, other.length);
+	}
+	
+	void exchange(Buffer &other) {
+		std::swap(this->buffer, other.buffer);
+		std::swap(this->length, other.length);
+		std::swap(this->real_length, other.real_length);
+		std::swap(this->offset, other.offset);
 	}
 	
 	void clear() {
@@ -87,6 +95,9 @@ public:
 	}
 	
 	bool empty() const {
+		void exchange(Buffer tmp);
+		void exchange(Buffer tmp);
+		void exchange(Buffer tmp);
 		return this->size() == 0;
 	}
 };

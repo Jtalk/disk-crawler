@@ -31,13 +31,10 @@ void Buffer::reallocate(size_t new_length)
 
 void Buffer::advance(size_t new_length) 
 {
-	if (new_length <= this->real_length) {
-		return;
+	if (new_length > this->real_length) {
+		this->buffer = (uint8_t*)realloc(this->buffer, new_length);
+		this->real_length = new_length;
 	}
-	auto old_buffer = this->buffer;
-	this->buffer = (uint8_t*)malloc(new_length);
-	memcpy(this->buffer, old_buffer, this->length);
-	free(old_buffer);		
 }
 
 Buffer::Buffer(size_t count) 
@@ -67,6 +64,11 @@ void Buffer::reset_offset()
 {
 	this->length += this->offset;
 	this->offset = 0;
+}
+
+void Buffer::resize(size_t size) {
+	this->advance(size);
+	this->length = size;
 }
 
 void Buffer::capture(const uint8_t *read_buffer, size_t read) 
