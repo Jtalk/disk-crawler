@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "base/FSFileStream.h"
+#include "FSFileStream.h"
 
 #include <deque>
 
@@ -38,7 +38,11 @@ class FATFileStream : public FSFileStream
 		
 		size_t total_sectors;
 		size_t size;
+		
+		bool correct;
         };
+	
+	static const size_t FATS_MAX = 4;
                 
         DeviceInfo device;
 	
@@ -76,6 +80,8 @@ public:
         virtual void seekg(streampos offset) override;
         virtual streampos tellg() const override;
         virtual bool eof() const override;
+	
+	const DeviceInfo& info() const;
         
         virtual bool correct() const override;
 };

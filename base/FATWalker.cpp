@@ -20,9 +20,9 @@
 
 #include "FATFileStream.h"
 
-#include "base/Buffer.h"
+#include "Buffer.h"
 
-#include "base/utility.h"
+#include "utility.h"
 
 #include <algorithm>
 

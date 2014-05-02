@@ -19,7 +19,7 @@
 
 #include "FATFileStream.h"
 
-#include "base/Log.h"
+#include "Log.h"
 
 #include <algorithm>
 
@@ -110,7 +110,7 @@ size_t FATFileStream::fat_type() const
 	if (count > 65524)
 		return 32;
 
-	abort();
+	return 0;
 }
 
 size_t FATFileStream::eoc() const
@@ -122,25 +122,53 @@ size_t FATFileStream::eoc() const
 		return 0xFFFFFF8;
 
 	default:
-		abort();
+		return 0;
 	}
 }
 
 void FATFileStream::init()
 {
+	this->device.correct = true;
+	
 	auto sector_size = this->get<uint16_t>(SECTOR_SIZE);
+	
+	if (sector_size == 0) {
+		this->device.correct = false;
+		return;
+	}
+	
 	this->device.cluster_size = sector_size * this->get<uint8_t>(CLUSTER_SIZE);
 
+	if (this->device.cluster_size == 0) {
+		this->device.correct = false;
+		return;
+	}
+	
 	this->device.fat_offset = sector_size * this->get<uint16_t>(RESERVED_SECTORS);
 
+	if (this->device.fat_offset == 0) {
+		this->device.correct = false;
+		return;
+	}
+	
 	auto number_of_fats = this->get<uint8_t>(NUMBER_OF_FATS);
 	auto number_of_root_entries = this->get<uint16_t>(NUMBER_OF_ROOT_ENTRIES);
 
+	if (number_of_fats == 0 or number_of_fats > FATS_MAX) {
+		this->device.correct = false;
+		return;
+	}
+	
 	this->device.fat_size = this->get<uint16_t>(SECTORS_PER_FAT) * sector_size;
 
 	if (this->device.fat_size == 0)
 		this->device.fat_size = this->get<uint32_t>(SECTORS_PER_FAT32) * sector_size;
 
+	if (this->device.fat_size == 0) {
+		this->device.correct = false;
+		return;
+	}
+	
 	streampos fats_end = this->device.fat_offset + streampos(number_of_fats * this->device.fat_size);
 
 	size_t root_directory_entries_size = sector_size * std::ceil(float(number_of_root_entries * 32) / sector_size);
@@ -152,13 +180,24 @@ void FATFileStream::init()
 	if (this->device.total_sectors == 0)
 		this->device.total_sectors = this->get<uint32_t>(LOGICAL_SECTORS_32);
 
+	if (this->device.total_sectors == 0) {
+		this->device.correct = false;
+		return;
+	}
+	
 	this->device.size = this->device.total_sectors * sector_size;
 	this->device.data_clusters_count = (this->device.total_sectors - this->device.data_offset / sector_size) * sector_size / this->device.cluster_size;
 
 	this->device.fat_entry_size = this->fat_type() / 8;
+	
+	if (this->device.fat_entry_size != 2 && this->device.fat_entry_size != 4) {
+		this->device.correct = false;
+		return;
+	}
+	
 	this->device.eoc = this->eoc();
 
-	this->is_correct = not ferror(this->stream);
+	this->device.correct = not ferror(this->stream);
 }
 
 void FATFileStream::init_clusters(streampos file_offset)
@@ -282,6 +321,10 @@ bool FATFileStream::eof() const
 	return this->is_eof || feof(this->stream);
 }
 
+const FATFileStream::DeviceInfo& FATFileStream::info() const {
+	return this->device;
+}
+
 void FATFileStream::seekg(streampos offset)
 {
 	this->current_pos = std::min(offset, this->file_size);
@@ -290,5 +333,5 @@ void FATFileStream::seekg(streampos offset)
 
 bool FATFileStream::correct() const
 {
-	return this->is_correct;
+	return this->device.correct && this->is_correct;
 }
