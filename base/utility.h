@@ -53,8 +53,8 @@ namespace utility
 static const size_t BUFFER_SIZE = 100000000;
 
 size_t str_find(const Buffer &string, const byte_array_t &substr);
-
 bool dump(ByteReader &reader, const std::string &filename);
+void sanitize(Buffer &buffer);
 
 template<typename Target>
 inline Target to(const byte_array_t &bytes)
@@ -72,6 +72,8 @@ size_t find(Stream &stream, const byte_array_t &to_find, typename Stream::stream
 
 	Buffer buffer(BUFFER_SIZE);
 	stream.seekg(offset);
+	
+	DEBUG_ASSERT(offset == stream.tellg(), "Unable to set stream offset %u in utility::find", offset);
 
 	while (!stream.eof() && stream.tellg() != Stream::npos) {
 		auto pos = stream.tellg();
@@ -84,7 +86,7 @@ size_t find(Stream &stream, const byte_array_t &to_find, typename Stream::stream
 		}
 
 		buffer.shrink(read);
-
+		
 		auto found_pos = str_find(buffer, to_find);
 
 		if (found_pos != Buffer::npos) {

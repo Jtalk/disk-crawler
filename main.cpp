@@ -24,6 +24,7 @@
 
 #include "base/cmdopts.h"
 #include "base/fspick.h"
+#include "base/utility.h"
 
 #include <iostream>
 
@@ -64,7 +65,13 @@ void output(const FSWalker::results_t &results, size_t chunk_size) {
 			reader->seekg(pos);
 			Buffer buffer(chunk_size + 2 * POSITION_OFFSET + 1);
 			auto read = reader->read(buffer, chunk_size + 2 * POSITION_OFFSET);
+			
+			logger()->debug("Read %u bytes for %u pos in output", read, pos);
+			
+			buffer.resize(buffer.size() + 1);
 			buffer.begin()[read] = 0;
+			
+			utility::sanitize(buffer);
 
 			logger()->info("\n"
 			               "========================= Found: =========================\n"
