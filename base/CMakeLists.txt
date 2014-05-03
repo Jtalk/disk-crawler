@@ -8,6 +8,7 @@ set (CRAWLERBASE_SOURCES
   Buffer.cpp
   OverlapBuffer.cpp 
   BaseDecoder.cpp
+  ExtFileStream.cpp 
   FATFileStream.cpp 
   FATWalker.cpp 
   FSWalker.cpp 
@@ -28,6 +29,7 @@ set (CRAWLERBASE_HEADERS
   Buffer.h
   OverlapBuffer.h
   BaseDecoder.h
+  ExtFileStream.h
   FATFileStream.h
   FATWalker.h
   FSWalker.h 
