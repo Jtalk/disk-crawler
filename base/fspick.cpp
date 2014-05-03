@@ -21,14 +21,17 @@
 #include "FATFileStream.h"
 #include "FATWalker.h"
 
+bool is_fat(const std::string &device_name) {
+	FATFileStream fat(device_name, 0);
+	return fat.info().correct;
+}
+
 FSWalker::walkers_t fspick(const std::string &device_name) {
 	FSWalker::walkers_t result;
 	
-	auto fat = new FATFileStream(device_name, 0);
-	if (fat->info().correct) {
+	if (is_fat(device_name)) {
 		result.push_back(new FATWalker(device_name));
-	} 
-	delete fat;
+	}
 	
 	return result;
 }
