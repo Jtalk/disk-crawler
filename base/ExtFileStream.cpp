@@ -40,6 +40,12 @@ enum ExtOffsets : size_t {
         ERROR = 60,
 };
 
+enum GroupDescriptorOffsets : size_t {
+	BLOCKS_BITMAP = 0,
+	INODE_BITMAP = 4,
+	INODE_TABLE = 8,
+};
+
 enum ExtState : uint16_t {
         EXT2_VALID_FS = 1, // Unmounted cleanly
         EXT2_ERROR_FS = 2, // Errors detected
@@ -80,21 +86,21 @@ ExtFileStream::ExtFileStream(const std::string &device_name, streampos absolute_
 void ExtFileStream::init() {
 	this->device.correct = true;
 
-	DEVICE_CHECK(EXT_SUPER_MAGIC == this->get<uint16_t>(MAGIC));
-	DEVICE_CHECK(VALID_STATES.count(this->get<uint16_t>(STATE)));
-	DEVICE_CHECK(VALID_ERRORS.count(this->get<uint16_t>(ERROR)));
+	DEVICE_CHECK(EXT_SUPER_MAGIC == this->superblock_get<uint16_t>(MAGIC));
+	DEVICE_CHECK(VALID_STATES.count(this->superblock_get<uint16_t>(STATE)));
+	DEVICE_CHECK(VALID_ERRORS.count(this->superblock_get<uint16_t>(ERROR)));
 
-	this->device.inodes_count = this->get<uint32_t>(INODES_COUNT);
-	this->device.blocks_count = this->get<uint32_t>(BLOCKS_COUNT);
+	this->device.inodes_count = this->superblock_get<uint32_t>(INODES_COUNT);
+	this->device.blocks_count = this->superblock_get<uint32_t>(BLOCKS_COUNT);
 
 	DEVICE_CHECK(this->device.inodes_count > 1 and this->device.blocks_count > 1);
 
-	auto blocks_offset = this->get<uint32_t>(BLOCK_SIZE);
+	auto blocks_offset = this->superblock_get<uint32_t>(BLOCK_SIZE);
 	DEVICE_CHECK(blocks_offset <= MAX_BLOCK_SIZE_OFFSET);
 	this->device.block_size = 1024 << blocks_offset;
 
-	this->device.first_data_block = this->get<uint32_t>(FIRST_DATA_BLOCK);
-	this->device.blocks_per_group = this->get<uint32_t>(BLOCKS_PER_GROUP);
+	this->device.first_data_block = this->superblock_get<uint32_t>(FIRST_DATA_BLOCK);
+	this->device.blocks_per_group = this->superblock_get<uint32_t>(BLOCKS_PER_GROUP);
 	
 	DEVICE_CHECK(this->device.first_data_block != SUPERBLOCK_OFFSET / this->device.block_size);
 }
@@ -110,11 +116,43 @@ void ExtFileStream::init_blocks(streampos absolute_offset) {
 	
 	Bitmap blocks_bitmap = this->read_group_bitmap(desc.blocks_bitmap);
 	
-	if (blocks_bitmap.test(block_n_rel)) {
+	if (blocks_bitmap[block_n_rel]) {
 		this->rebuild_existent(desc, blocks_bitmap, absolute_offset);
 	} else {
 		this->rebuild_deleted(desc, blocks_bitmap, absolute_offset);
 	}
+}
+
+ExtFileStream::BlockDescriptor ExtFileStream::read_descriptor(size_t block_group_n) {
+	size_t groups_descriptor_table_start = this->device.block_size * (this->device.first_data_block + 1);
+	size_t group_descriptor_start = groups_descriptor_table_start + block_group_n * GROUP_DESCRIPTOR_SIZE;
+	
+	BlockDescriptor desc;
+	desc.blocks_bitmap = this->get<uint32_t>(group_descriptor_start + BLOCKS_BITMAP);
+	desc.inodes_bitmap = this->get<uint32_t>(group_descriptor_start + INODE_BITMAP);
+	desc.inodes_table = this->get<uint32_t>(group_descriptor_start + INODE_TABLE);
+	
+	return desc;
+}
+
+ExtFileStream::Bitmap ExtFileStream::read_group_bitmap(size_t bitmap_start_block_n) {
+	Buffer buffer(this->device.blocks_per_group);
+	fseek(this->stream, bitmap_start_block_n * this->device.block_size, SEEK_SET);
+	auto read = fread(buffer.begin(), 1, this->device.blocks_per_group, this->stream);
+	buffer.shrink(read);
+	
+	if (buffer.empty()) {
+		this->is_correct = false;
+		return Bitmap();
+	}
+	
+	Bitmap result;
+	result.reserve(read);
+	for (uint8_t item : buffer) {
+		result.push_back(item);
+	}
+	
+	return std::move(result);
 }
 
 FSFileStream::streampos ExtFileStream::read(Buffer &buffer, streampos size) {

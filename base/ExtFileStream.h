@@ -20,11 +20,20 @@
 
 #include "FSFileStream.h"
 
+#include <vector>
+
 class ExtFileStream : public FSFileStream {
 	static const streampos SUPERBLOCK_OFFSET = 1024;
 	static const uint32_t MAX_BLOCK_SIZE_OFFSET = 5;
 	static const uint16_t EXT_SUPER_MAGIC = 0xEF53;
+	static const uint8_t GROUP_DESCRIPTOR_SIZE = 32;
 
+	struct BlockDescriptor {
+		uint32_t blocks_bitmap;
+		uint32_t inodes_bitmap;
+		uint32_t inodes_table;
+	};
+	
 	struct DeviceInfo {
 		uint32_t inodes_count;
 		uint32_t blocks_count;
@@ -35,6 +44,8 @@ class ExtFileStream : public FSFileStream {
 
 		bool correct;
 	};
+	
+	typedef std::vector<bool> Bitmap;
 
 	DeviceInfo device;
 	
@@ -44,9 +55,15 @@ class ExtFileStream : public FSFileStream {
 	void init_blocks(streampos absolute_offset);
 
 	template<typename T>
-	T get(streampos offset) const {
+	T superblock_get(streampos offset) const {
 		return this->FSFileStream::get<T>(offset + SUPERBLOCK_OFFSET);
 	}
+	
+	BlockDescriptor read_descriptor(size_t block_group_n);
+	Bitmap read_group_bitmap(size_t bitmap_start_block_n);
+	
+	void rebuild_existent(const BlockDescriptor &desc, const Bitmap &blocks_bitmap, streampos absolute_offset);
+	void rebuild_deleted(const BlockDescriptor &desc, const Bitmap &blocks_bitmap, streampos absolute_offset);
 
 protected:
 
