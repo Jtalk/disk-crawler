@@ -20,19 +20,29 @@
 
 #include <unordered_set>
 
+#include <cstdio>
+
+#define DEVICE_CHECK(expr) \
+	if (not (expr)) { \
+		this->device.correct = false; \
+		return; \
+	} (void)0
+
 enum ExtOffsets : size_t {
-	INODES_COUNT = 0x00,
-	BLOCKS_COUNT = 0x04,
-	BLOCK_SIZE = 0x18,
-	
-	MAGIC = 56,
-	STATE = 58,
-	ERROR = 60,
+        INODES_COUNT = 0x00,
+        BLOCKS_COUNT = 0x04,
+        FIRST_DATA_BLOCK = 0x14,
+        BLOCK_SIZE = 0x18,
+	BLOCKS_PER_GROUP = 0x20,
+
+        MAGIC = 56,
+        STATE = 58,
+        ERROR = 60,
 };
 
 enum ExtState : uint16_t {
-	EXT2_VALID_FS = 1, // Unmounted cleanly
-	EXT2_ERROR_FS = 2, // Errors detected
+        EXT2_VALID_FS = 1, // Unmounted cleanly
+        EXT2_ERROR_FS = 2, // Errors detected
 };
 
 static const std::unordered_set<uint16_t> VALID_STATES = {
@@ -41,9 +51,9 @@ static const std::unordered_set<uint16_t> VALID_STATES = {
 };
 
 enum ExtErrors : uint16_t {
-	EXT2_ERRORS_CONTINUE = 1, // continue as if nothing happened
-	EXT2_ERRORS_RO = 2, // remount read-only
-	EXT2_ERRORS_PANIC = 3, // cause a kernel panic
+        EXT2_ERRORS_CONTINUE = 1, // continue as if nothing happened
+        EXT2_ERRORS_RO = 2, // remount read-only
+        EXT2_ERRORS_PANIC = 3, // cause a kernel panic
 };
 
 static const std::unordered_set<uint16_t> VALID_ERRORS = {
@@ -52,47 +62,47 @@ static const std::unordered_set<uint16_t> VALID_ERRORS = {
 	EXT2_ERRORS_PANIC,
 };
 
-ExtFileStream::ExtFileStream(const std::string &device_name)
-	: FSFileStream(device_name) {
+ExtFileStream::ExtFileStream(const std::string &device_name, streampos absolute_offset)
+	: FSFileStream(device_name), is_correct(true) {
 	this->init();
+
+	if (not this->device.correct) {
+		return;
+	}
+
+	this->init_blocks(absolute_offset);
+
+	if (not this->correct()) {
+		return;
+	}
 }
 
 void ExtFileStream::init() {
 	this->device.correct = true;
-	
-	auto magic = this->get<uint16_t>(MAGIC);
-	if (magic != EXT_SUPER_MAGIC) {
-		this->device.correct = false;
-		return;
-	}
-	
-	auto state = this->get<uint16_t>(STATE);
-	if (not VALID_STATES.count(state)) {
-		this->device.correct = false;
-		return;
-	}
-	
-	auto error = this->get<uint16_t>(ERROR);
-	if (not VALID_ERRORS.count(error)) {
-		this->device.correct = false;
-		return;
-	}
-	
+
+	DEVICE_CHECK(EXT_SUPER_MAGIC == this->get<uint16_t>(MAGIC));
+	DEVICE_CHECK(VALID_STATES.count(this->get<uint16_t>(STATE)));
+	DEVICE_CHECK(VALID_ERRORS.count(this->get<uint16_t>(ERROR)));
+
 	this->device.inodes_count = this->get<uint32_t>(INODES_COUNT);
 	this->device.blocks_count = this->get<uint32_t>(BLOCKS_COUNT);
-	
-	if (this->device.inodes_count <= 1 or this->device.blocks_count <= 1) {
-		this->device.correct = false;
-		return;
-	}
-	
+
+	DEVICE_CHECK(this->device.inodes_count > 1 and this->device.blocks_count > 1);
+
 	auto blocks_offset = this->get<uint32_t>(BLOCK_SIZE);
-	if (blocks_offset > MAX_BLOCK_SIZE_OFFSET) {
-		this->device.correct = false;
-		return;
-	}
-	
+	DEVICE_CHECK(blocks_offset <= MAX_BLOCK_SIZE_OFFSET);
 	this->device.block_size = 1024 << blocks_offset;
+
+	this->device.first_data_block = this->get<uint32_t>(FIRST_DATA_BLOCK);
+	this->device.blocks_per_group = this->get<uint32_t>(BLOCKS_PER_GROUP);
+	
+	DEVICE_CHECK(this->device.first_data_block != SUPERBLOCK_OFFSET / this->device.block_size);
+}
+
+void ExtFileStream::init_blocks(streampos absolute_offset) {
+	size_t block_n = absolute_offset / this->device.block_size;
+	size_t relative_block_n = block_n - this->device.first_data_block;
+	size_t block_group_n = relative_block_n / this->device.blocks_per_group;
 }
 
 FSFileStream::streampos ExtFileStream::read(Buffer &buffer, streampos size) {
@@ -100,7 +110,7 @@ FSFileStream::streampos ExtFileStream::read(Buffer &buffer, streampos size) {
 }
 
 bool ExtFileStream::eof() const {
-
+	return feof(this->stream) or ferror(this->stream) or not this->correct();
 }
 
 streampos ExtFileStream::tellg() const {
@@ -111,10 +121,10 @@ void ExtFileStream::seekg(streampos offset) {
 
 }
 
-const ExtFileStream::DeviceInfo& ExtFileStream::info() const {
+const ExtFileStream::DeviceInfo &ExtFileStream::info() const {
 	return this->device;
 }
 
 bool ExtFileStream::correct() const {
-
+	return this->device.correct and this->is_correct;
 }

@@ -29,13 +29,19 @@ class ExtFileStream : public FSFileStream {
 		uint32_t inodes_count;
 		uint32_t blocks_count;
 		uint32_t block_size;
+		
+		uint32_t first_data_block;
+		uint32_t blocks_per_group;
 
 		bool correct;
 	};
 
 	DeviceInfo device;
+	
+	bool is_correct;
 
 	void init();
+	void init_blocks(streampos absolute_offset);
 
 	template<typename T>
 	T get(streampos offset) const {
@@ -45,7 +51,7 @@ class ExtFileStream : public FSFileStream {
 protected:
 
 public:
-	ExtFileStream(const std::string &device_name);
+	ExtFileStream(const std::string &device_name, streampos absolute_offset);
 
 	virtual streampos read(Buffer &buffer, streampos size);
 
