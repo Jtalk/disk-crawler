@@ -100,9 +100,21 @@ void ExtFileStream::init() {
 }
 
 void ExtFileStream::init_blocks(streampos absolute_offset) {
-	size_t block_n = absolute_offset / this->device.block_size;
-	size_t relative_block_n = block_n - this->device.first_data_block;
+	size_t block_n_abs = absolute_offset / this->device.block_size;
+	size_t relative_block_n = block_n_abs - this->device.first_data_block;
 	size_t block_group_n = relative_block_n / this->device.blocks_per_group;
+	size_t block_group_start = block_group_n * this->device.blocks_per_group;
+	size_t block_n_rel = block_n_abs - block_group_start;
+	
+	BlockDescriptor desc = this->read_descriptor(block_group_n);
+	
+	Bitmap blocks_bitmap = this->read_group_bitmap(desc.blocks_bitmap);
+	
+	if (blocks_bitmap.test(block_n_rel)) {
+		this->rebuild_existent(desc, blocks_bitmap, absolute_offset);
+	} else {
+		this->rebuild_deleted(desc, blocks_bitmap, absolute_offset);
+	}
 }
 
 FSFileStream::streampos ExtFileStream::read(Buffer &buffer, streampos size) {
