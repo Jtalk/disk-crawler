@@ -106,20 +106,22 @@ void ExtFileStream::init() {
 }
 
 void ExtFileStream::init_blocks(streampos absolute_offset) {
-	size_t block_n_abs = absolute_offset / this->device.block_size;
-	size_t relative_block_n = block_n_abs - this->device.first_data_block;
-	size_t block_group_n = relative_block_n / this->device.blocks_per_group;
-	size_t block_group_start = block_group_n * this->device.blocks_per_group;
-	size_t block_n_rel = block_n_abs - block_group_start;
+	BlockOffsets offsets;
 	
-	BlockDescriptor desc = this->read_descriptor(block_group_n);
+	offsets.block_n_abs = absolute_offset / this->device.block_size;
+	offsets.start_offset_relative_block_n = offsets.block_n_abs - this->device.first_data_block;
+	offsets.block_group_n = offsets.start_offset_relative_block_n / this->device.blocks_per_group;
+	offsets.block_group_start = offsets.block_group_n * this->device.blocks_per_group;
+	offsets.block_n_rel = offsets.block_n_abs - offsets.block_group_start;
+	
+	BlockDescriptor desc = this->read_descriptor(offsets.block_group_n);
 	
 	Bitmap blocks_bitmap = this->read_group_bitmap(desc.blocks_bitmap);
 	
-	if (blocks_bitmap[block_n_rel]) {
-		this->rebuild_existent(desc, blocks_bitmap, absolute_offset);
+	if (blocks_bitmap[offsets.block_n_rel]) {
+		this->rebuild_existent(desc, blocks_bitmap, offsets);
 	} else {
-		this->rebuild_deleted(desc, blocks_bitmap, absolute_offset);
+		this->rebuild_deleted(desc, blocks_bitmap, offsets);
 	}
 }
 
@@ -153,6 +155,26 @@ ExtFileStream::Bitmap ExtFileStream::read_group_bitmap(size_t bitmap_start_block
 	}
 	
 	return std::move(result);
+}
+
+void ExtFileStream::find_first(const ExtFileStream::Bitmap &blocks_bitmap, size_t block_n_relative) {
+	for (size_t i = block_n_relative; i > 0; i--) {
+		if (blocks_bitmap[i]) {
+			return i + 1;
+		}
+	}
+	
+	return 0;
+}
+
+void ExtFileStream::rebuild_deleted(const ExtFileStream::BlockDescriptor &desc, const ExtFileStream::Bitmap &blocks_bitmap, const ExtFileStream::BlockOffsets &offset) {
+	size_t start = this->find_first(blocks_bitmap, offset.block_n_rel);
+	size_t abs_block_addition = offset.block_group_start;
+	start += abs_block_addition;
+	
+	for (size_t i = start; blocks_bitmap.size() < i and not blocks_bitmap[i]; i++) {
+		this->blocks.push_back(i);
+	}
 }
 
 FSFileStream::streampos ExtFileStream::read(Buffer &buffer, streampos size) {

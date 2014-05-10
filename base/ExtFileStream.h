@@ -34,6 +34,15 @@ class ExtFileStream : public FSFileStream {
 		uint32_t inodes_table;
 	};
 	
+	struct BlockOffsets {
+		size_t block_n_abs;
+		size_t start_offset_relative_block_n;
+		size_t block_group_n;
+		size_t block_group_start;
+		size_t block_n_rel;
+	};
+	
+public:
 	struct DeviceInfo {
 		uint32_t inodes_count;
 		uint32_t blocks_count;
@@ -45,8 +54,11 @@ class ExtFileStream : public FSFileStream {
 		bool correct;
 	};
 	
+private:
 	typedef std::vector<bool> Bitmap;
 
+	std::deque<size_t> blocks;
+	
 	DeviceInfo device;
 	
 	bool is_correct;
@@ -62,8 +74,10 @@ class ExtFileStream : public FSFileStream {
 	BlockDescriptor read_descriptor(size_t block_group_n);
 	Bitmap read_group_bitmap(size_t bitmap_start_block_n);
 	
-	void rebuild_existent(const BlockDescriptor &desc, const Bitmap &blocks_bitmap, streampos absolute_offset);
-	void rebuild_deleted(const BlockDescriptor &desc, const Bitmap &blocks_bitmap, streampos absolute_offset);
+	void find_first(const Bitmap &blocks_bitmap, size_t block_n_relative);
+	
+	void rebuild_existent(const BlockDescriptor &desc, const Bitmap &blocks_bitmap, const BlockOffsets &offset);
+	void rebuild_deleted(const BlockDescriptor &desc, const Bitmap &blocks_bitmap, const BlockOffsets &offset);
 
 protected:
 
