@@ -13,13 +13,12 @@ set (CMAKE_AR      "/usr/bin/llvm-ar")
 set (CMAKE_LINKER  "/usr/bin/llvm-ld")
 set (CMAKE_NM      "/usr/bin/llvm-nm")
 set (CMAKE_OBJDUMP "/usr/bin/llvm-objdump")
-#set (CMAKE_RANLIB  "/usr/bin/llvm-ranlib")
 
 # Base library building
 add_subdirectory(base)
 
 # Building libcrawl libarary
-add_library(crawl FATFileStream.cpp FATWalker.cpp )
+add_library(crawl)
 
 find_package(LibArchive REQUIRED)
 target_link_libraries(crawl crawlerbase ${LibArchive_LIBRARIES})
