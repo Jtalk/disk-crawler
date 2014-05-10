@@ -157,18 +157,8 @@ ExtFileStream::Bitmap ExtFileStream::read_group_bitmap(size_t bitmap_start_block
 	return std::move(result);
 }
 
-void ExtFileStream::find_first(const ExtFileStream::Bitmap &blocks_bitmap, size_t block_n_relative) {
-	for (size_t i = block_n_relative; i > 0; i--) {
-		if (blocks_bitmap[i]) {
-			return i + 1;
-		}
-	}
-	
-	return 0;
-}
-
 void ExtFileStream::rebuild_deleted(const ExtFileStream::BlockDescriptor &desc, const ExtFileStream::Bitmap &blocks_bitmap, const ExtFileStream::BlockOffsets &offset) {
-	size_t start = this->find_first(blocks_bitmap, offset.block_n_rel);
+	size_t start = offset.block_n_rel;
 	size_t abs_block_addition = offset.block_group_start;
 	start += abs_block_addition;
 	

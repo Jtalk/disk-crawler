@@ -74,8 +74,6 @@ private:
 	BlockDescriptor read_descriptor(size_t block_group_n);
 	Bitmap read_group_bitmap(size_t bitmap_start_block_n);
 	
-	void find_first(const Bitmap &blocks_bitmap, size_t block_n_relative);
-	
 	void rebuild_existent(const BlockDescriptor &desc, const Bitmap &blocks_bitmap, const BlockOffsets &offset);
 	void rebuild_deleted(const BlockDescriptor &desc, const Bitmap &blocks_bitmap, const BlockOffsets &offset);
 
