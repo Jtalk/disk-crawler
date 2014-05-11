@@ -68,6 +68,8 @@ private:
 	
 	bool is_correct;
 
+	static bool check_block(const Bitmap &blocks_bitmap, bool used, size_t block_n_group_relative);
+	
 	void init();
 	void init_blocks(streampos absolute_offset);
 
@@ -82,9 +84,12 @@ private:
 	void rebuild_existent(const BlockDescriptor &desc, const Bitmap &blocks_bitmap, const BlockOffsets &offset);
 	void rebuild_deleted(const BlockDescriptor &desc, const Bitmap &blocks_bitmap, const BlockOffsets &offset);
 	
-	void indirect(const INode &inode);
-	void doubly_indirect(const INode &inode);
-	void triply_indirect(const INode &inode);
+	bool add(const Bitmap &blocks_bitmap, bool used, size_t block_group_start, size_t block_n_group_relative);
+	INode find_inode(const ExtFileStream::BlockDescriptor &desc, const ExtFileStream::BlockOffsets &offset);
+	
+	void indirect(const ExtFileStream::Bitmap &blocks_bitmap, size_t blocks_group_start, uint32_t block_pointer);
+	void doubly_indirect(const ExtFileStream::Bitmap &blocks_bitmap, size_t blocks_group_start, uint32_t block_pointer);
+	void triply_indirect(const ExtFileStream::Bitmap &blocks_bitmap, size_t blocks_group_start, uint32_t block_pointer);
 
 protected:
 

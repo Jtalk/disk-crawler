@@ -159,12 +159,8 @@ ExtFileStream::Bitmap ExtFileStream::read_group_bitmap(size_t bitmap_start_block
 
 void ExtFileStream::rebuild_deleted(const ExtFileStream::BlockDescriptor &desc, const ExtFileStream::Bitmap &blocks_bitmap, const ExtFileStream::BlockOffsets &offset) {
 	size_t start = offset.block_n_rel;
-	size_t abs_block_addition = offset.block_group_start;
-	start += abs_block_addition;
-	
-	for (size_t i = start; blocks_bitmap.size() < i and not blocks_bitmap[i]; i++) {
-		this->blocks.push_back(i);
-	}
+	while (this->add(blocks_bitmap, false, offset.block_group_start, start++))
+	{}
 }
 void ExtFileStream::rebuild_existent(const ExtFileStream::BlockDescriptor &desc, const ExtFileStream::Bitmap &blocks_bitmap, const ExtFileStream::BlockOffsets &offset) {
 	// TODO: Inodes cache powered by Bloom filters
@@ -173,25 +169,74 @@ void ExtFileStream::rebuild_existent(const ExtFileStream::BlockDescriptor &desc,
 	uint8_t i = 0;
 	do {
 		next_block = inode.blocks[i];
+		
+		if (next_block == END_OF_BLOCKCHAIN) {
+			break;
+		}
+		
 		switch (i++) {
 			case INode::FILE_BLOCKS_MAX:
 				next_block = END_OF_BLOCKCHAIN;
 				break;
 			case INODE_FILE_BLOCKS_TRIPLY_INDIRECT:
-				this->triply_indirect(inode);
+				this->triply_indirect(blocks_bitmap, offset.block_group_start, inode.blocks[next_block]);
 				break;
 			case INODE_FILE_BLOCKS_DOUBLY_INDIRECT:
-				this->doubly_indirect(inode);
+				this->doubly_indirect(blocks_bitmap, offset.block_group_start, inode.blocks[next_block]);
 				break;
 			case INODE_FILE_BLOCKS_INDIRECT:
-				this->indirect(inode);
+				this->indirect(blocks_bitmap, offset.block_group_start, inode.blocks[next_block]);
 				break;
 			default:
-				if (next_block != END_OF_BLOCKCHAIN) {
-					this->blocks.push_back(next_block);
-				}
+				this->add(blocks_bitmap, true, offset.block_group_start, next_block);
 				break;
+		}
 	} while (next_block != END_OF_BLOCKCHAIN);
+}
+
+bool ExtFileStream::check_block(const ExtFileStream::Bitmap &blocks_bitmap, bool used, size_t block_n_group_relative) {
+	bool fits_bitmap = blocks_bitmap.size() > block_n_group_relative;
+	return fits_bitmap and blocks_bitmap[block_n_group_relative] == used;
+}
+
+bool ExtFileStream::add(const Bitmap &blocks_bitmap, bool used, size_t block_group_start, size_t block_n_group_relative) {
+	bool checked = ExtFileStream::check_block(blocks_bitmap, used, block_group_start, block_n_group_relative);
+	if (checked) {
+		this->blocks.push_back(block_group_start + block_n_group_relative);
+	}
+	return checked;
+}
+
+void ExtFileStream::indirect(const ExtFileStream::Bitmap &blocks_bitmap, size_t blocks_group_start, uint32_t block_pointer) {
+	size_t blocks_end = block_pointer + this->device.block_size;
+	for (uint32_t block = block_pointer; block < blocks_end; block++) {
+		auto current_pointer = this->get<uint32_t>(blocks_group_start + block);
+		if (block == END_OF_BLOCKCHAIN or not this->add(blocks_bitmap, true, blocks_group_start, current_pointer)) {
+			break;
+		}
+	}
+}
+
+void ExtFileStream::doubly_indirect(const ExtFileStream::Bitmap &blocks_bitmap, size_t blocks_group_start, uint32_t block_pointer) {
+	size_t blocks_end = block_pointer + this->device.block_size;
+	for (uint32_t block = block_pointer; block < blocks_end; block++) {
+		auto current_pointer = this->get<uint32_t>(blocks_group_start + block);
+		if (block == END_OF_BLOCKCHAIN) {
+			break;
+		}
+		this->indirect(blocks_bitmap, blocks_group_start, current_pointer);
+	}
+}
+
+void ExtFileStream::triply_indirect(const ExtFileStream::Bitmap &blocks_bitmap, size_t blocks_group_start, uint32_t block_pointer) {
+	size_t blocks_end = block_pointer + this->device.block_size;
+	for (uint32_t block = block_pointer; block < blocks_end; block++) {
+		auto current_pointer = this->get<uint32_t>(blocks_group_start + block);
+		if (block == END_OF_BLOCKCHAIN) {
+			break;
+		}
+		this->doubly_indirect(blocks_bitmap, blocks_group_start, current_pointer);
+	}
 }
 
 FSFileStream::streampos ExtFileStream::read(Buffer &buffer, streampos size) {
