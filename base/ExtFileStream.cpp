@@ -41,6 +41,8 @@ enum ExtOffsets : size_t {
         ERROR = 60,
 	
 	REVISION = 76,
+	
+	FIRST_INODE = 84,
 };
 
 enum GroupDescriptorOffsets : size_t {
@@ -124,6 +126,12 @@ void ExtFileStream::init() {
 	this->device.inodes_per_group = this->superblock_get<uint32_t>(INODES_PER_GROUP);
 	
 	DEVICE_CHECK(this->device.first_data_block != SUPERBLOCK_OFFSET / this->device.block_size);
+	
+	if (this->device.revision == EXT2_GOOD_OLD_REV) {
+		this->device.group_first_data_inode = REV_0_INODE_TABLE_RESERVED_ENTRIES_COUNT;
+	} else {
+		this->device.group_first_data_inode = this->superblock_get<uint32_t>(FIRST_INODE);
+	}
 }
 
 void ExtFileStream::init_blocks(streampos absolute_offset) {
@@ -208,7 +216,7 @@ bool ExtFileStream::add(const Bitmap &blocks_bitmap, bool used, size_t block_gro
 INode ExtFileStream::find_inode(const ExtFileStream::BlockDescriptor &desc, const ExtFileStream::BlockOffsets &offset) {
 	size_t inodes_table_start_abs = desc.inodes_table + offset.block_group_start;
 	for (size_t i = this->device.group_first_data_inode; i < this->device.inodes_per_group; i++) {
-		INode &&inode = this->read_inode(inodes_table_start_abs + (i * inode_size));
+		INode &&inode = this->read_inode(inodes_table_start_abs + (i * INODE_SIZE));
 		bool found = false;
 		this->inode_foreach(inode, [&offset, &found] (size_t block_n_group_relative) {
 			found = block_n_group_relative == offset.block_n_group_relative;

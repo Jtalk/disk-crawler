@@ -33,6 +33,7 @@ class ExtFileStream : public FSFileStream {
 	static const uint8_t INODE_FILE_BLOCKS_TRIPLY_INDIRECT = 14;
 	static const uint32_t END_OF_BLOCKCHAIN = 0;
 	static const uint8_t REV_0_INODE_TABLE_RESERVED_ENTRIES_COUNT = 11;
+	static const uint8_t INODE_SIZE = 128;
 
 	enum Revision {
 		EXT2_GOOD_OLD_REV = 0,
@@ -47,10 +48,10 @@ class ExtFileStream : public FSFileStream {
 	
 	struct BlockOffsets {
 		size_t block_n_abs;
-		size_t start_offset_relative_block_n;
+		size_t start_offset_relative_block_n_abs;
 		size_t block_group_n;
 		size_t block_group_start;
-		size_t block_n_rel;
+		size_t block_n_group_relative;
 	};
 	
 public:
@@ -62,6 +63,8 @@ public:
 		uint32_t first_data_block;
 		uint32_t blocks_per_group;
 		uint32_t inodes_per_group;
+		
+		uint32_t group_first_data_inode;
 		
 		Revision revision;
 
