@@ -13,13 +13,14 @@ set (CRAWLERBASE_SOURCES
   FATWalker.cpp 
   FSWalker.cpp 
   FSFileStream.cpp
+  INode.cpp 
   ZipDecoder.cpp 
   PlainDecoder.cpp 
   PlainFileStream.cpp 
   PlainWalker.cpp
 )
 
-set (CRAWLERBASE_HEADERS 
+set (CRAWLERBASE_HEADERS
   cmdopts.h 
   fspick.h
   ByteReader.h 
@@ -34,6 +35,7 @@ set (CRAWLERBASE_HEADERS
   FATWalker.h
   FSWalker.h 
   FSFileStream.h
+  INode.h
   ZipDecoder.h 
   PlainDecoder.h 
   PlainFileStream.h
