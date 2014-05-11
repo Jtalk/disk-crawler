@@ -17,3 +17,24 @@
 */
 
 #include "INode.h"
+
+#include <cstdlib>
+
+INode::INode(AllocType type): file_size(0) {
+	if (type == ALLOC_FULL) {
+		this->blocks = (uint32_t*)calloc(FILE_BLOCKS_MAX, sizeof(uint32_t));
+		memset(this->blocks, 0, FILE_BLOCKS_MAX * sizeof(uint32_t)); // TODO: If this necessary?
+	} else {
+		this->blocks = nullptr;
+	}
+}
+
+INode::INode(INode && other) {
+	std::swap(this->file_size, other.file_size);
+	std::swap(this->blocks, other.blocks);
+}
+
+INode::~INode() {
+	free(this->blocks);
+}
+
