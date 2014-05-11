@@ -166,6 +166,33 @@ void ExtFileStream::rebuild_deleted(const ExtFileStream::BlockDescriptor &desc, 
 		this->blocks.push_back(i);
 	}
 }
+void ExtFileStream::rebuild_existent(const ExtFileStream::BlockDescriptor &desc, const ExtFileStream::Bitmap &blocks_bitmap, const ExtFileStream::BlockOffsets &offset) {
+	// TODO: Inodes cache powered by Bloom filters
+	INode &&inode = this->find_inode(desc, offset);
+	uint32_t next_block = END_OF_BLOCKCHAIN;
+	uint8_t i = 0;
+	do {
+		next_block = inode.blocks[i];
+		switch (i++) {
+			case INODE_FILE_BLOCKS_MAX:
+				next_block = END_OF_BLOCKCHAIN;
+				break;
+			case INODE_FILE_BLOCKS_TRIPLY_INDIRECT:
+				this->triply_indirect(inode);
+				break;
+			case INODE_FILE_BLOCKS_DOUBLY_INDIRECT:
+				this->doubly_indirect(inode);
+				break;
+			case INODE_FILE_BLOCKS_INDIRECT:
+				this->indirect(inode);
+				break;
+			default:
+				if (next_block != END_OF_BLOCKCHAIN) {
+					this->blocks.push_back(next_block);
+				}
+				break;
+	} while (next_block != END_OF_BLOCKCHAIN);
+}
 
 FSFileStream::streampos ExtFileStream::read(Buffer &buffer, streampos size) {
 

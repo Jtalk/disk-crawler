@@ -27,6 +27,11 @@ class ExtFileStream : public FSFileStream {
 	static const uint32_t MAX_BLOCK_SIZE_OFFSET = 5;
 	static const uint16_t EXT_SUPER_MAGIC = 0xEF53;
 	static const uint8_t GROUP_DESCRIPTOR_SIZE = 32;
+	static const uint8_t INODE_FILE_BLOCKS_INDIRECT = 12;
+	static const uint8_t INODE_FILE_BLOCKS_DOUBLY_INDIRECT = 13;
+	static const uint8_t INODE_FILE_BLOCKS_TRIPLY_INDIRECT = 14;
+	static const uint8_t INODE_FILE_BLOCKS_MAX = 14;
+	static const uint32_t END_OF_BLOCKCHAIN = 0;
 
 	struct BlockDescriptor {
 		uint32_t blocks_bitmap;
@@ -76,6 +81,10 @@ private:
 	
 	void rebuild_existent(const BlockDescriptor &desc, const Bitmap &blocks_bitmap, const BlockOffsets &offset);
 	void rebuild_deleted(const BlockDescriptor &desc, const Bitmap &blocks_bitmap, const BlockOffsets &offset);
+	
+	void indirect(const INode &inode);
+	void doubly_indirect(const INode &inode);
+	void triply_indirect(const INode &inode);
 
 protected:
 
