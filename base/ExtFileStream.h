@@ -19,6 +19,7 @@
 #pragma once
 
 #include "FSFileStream.h"
+#include "INode.h"
 
 #include <vector>
 
@@ -30,7 +31,6 @@ class ExtFileStream : public FSFileStream {
 	static const uint8_t INODE_FILE_BLOCKS_INDIRECT = 12;
 	static const uint8_t INODE_FILE_BLOCKS_DOUBLY_INDIRECT = 13;
 	static const uint8_t INODE_FILE_BLOCKS_TRIPLY_INDIRECT = 14;
-	static const uint8_t INODE_FILE_BLOCKS_MAX = 14;
 	static const uint32_t END_OF_BLOCKCHAIN = 0;
 
 	struct BlockDescriptor {

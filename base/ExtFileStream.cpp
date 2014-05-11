@@ -174,7 +174,7 @@ void ExtFileStream::rebuild_existent(const ExtFileStream::BlockDescriptor &desc,
 	do {
 		next_block = inode.blocks[i];
 		switch (i++) {
-			case INODE_FILE_BLOCKS_MAX:
+			case INode::FILE_BLOCKS_MAX:
 				next_block = END_OF_BLOCKCHAIN;
 				break;
 			case INODE_FILE_BLOCKS_TRIPLY_INDIRECT:
