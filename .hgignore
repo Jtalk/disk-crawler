@@ -2,3 +2,4 @@ syntax: glob
 .directory
 build/*
 .kdev4/*
+*.kate-swp
