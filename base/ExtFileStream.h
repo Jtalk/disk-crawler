@@ -32,7 +32,13 @@ class ExtFileStream : public FSFileStream {
 	static const uint8_t INODE_FILE_BLOCKS_DOUBLY_INDIRECT = 13;
 	static const uint8_t INODE_FILE_BLOCKS_TRIPLY_INDIRECT = 14;
 	static const uint32_t END_OF_BLOCKCHAIN = 0;
+	static const uint8_t REV_0_INODE_TABLE_RESERVED_ENTRIES_COUNT = 11;
 
+	enum Revision {
+		EXT2_GOOD_OLD_REV = 0,
+		EXT2_DYNAMIC_REV = 1,
+	};
+	
 	struct BlockDescriptor {
 		uint32_t blocks_bitmap;
 		uint32_t inodes_bitmap;
@@ -55,12 +61,16 @@ public:
 		
 		uint32_t first_data_block;
 		uint32_t blocks_per_group;
+		uint32_t inodes_per_group;
+		
+		Revision revision;
 
 		bool correct;
 	};
 	
 private:
 	typedef std::vector<bool> Bitmap;
+	typedef std::function<bool(size_t)> inode_blocks_callback_t;
 
 	std::deque<size_t> blocks;
 	
@@ -86,6 +96,9 @@ private:
 	
 	bool add(const Bitmap &blocks_bitmap, bool used, size_t block_group_start, size_t block_n_group_relative);
 	INode find_inode(const ExtFileStream::BlockDescriptor &desc, const ExtFileStream::BlockOffsets &offset);
+	INode read_inode(size_t inode_offset);
+	
+	void inode_foreach(const INode &inode, const inode_blocks_callback_t &callback);
 	
 	void indirect(const ExtFileStream::Bitmap &blocks_bitmap, size_t blocks_group_start, uint32_t block_pointer);
 	void doubly_indirect(const ExtFileStream::Bitmap &blocks_bitmap, size_t blocks_group_start, uint32_t block_pointer);

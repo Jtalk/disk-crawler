@@ -34,10 +34,13 @@ enum ExtOffsets : size_t {
         FIRST_DATA_BLOCK = 0x14,
         BLOCK_SIZE = 0x18,
 	BLOCKS_PER_GROUP = 0x20,
+	INODES_PER_GROUP = 0x28,
 
         MAGIC = 56,
         STATE = 58,
         ERROR = 60,
+	
+	REVISION = 76,
 };
 
 enum GroupDescriptorOffsets : size_t {
@@ -45,6 +48,15 @@ enum GroupDescriptorOffsets : size_t {
 	INODE_BITMAP = 4,
 	INODE_TABLE = 8,
 };
+
+enum INodeOffsets : size_t {
+	TYPE = 0,
+	FILE_SIZE = 4,
+	BLOCKS = 40,
+	DIR_ACL = 108,
+};
+
+static const uint16_t REGULAR_FILE_TYPE = 0x8000;
 
 enum ExtState : uint16_t {
         EXT2_VALID_FS = 1, // Unmounted cleanly
@@ -66,6 +78,11 @@ static const std::unordered_set<uint16_t> VALID_ERRORS = {
 	EXT2_ERRORS_CONTINUE,
 	EXT2_ERRORS_RO,
 	EXT2_ERRORS_PANIC,
+};
+
+static const std::unordered_set<uint32_t> VALID_REVISIONS = {
+	ExtFileStream::EXT2_GOOD_OLD_REV,
+	ExtFileStream::EXT2_DYNAMIC_REV,
 };
 
 ExtFileStream::ExtFileStream(const std::string &device_name, streampos absolute_offset)
@@ -90,6 +107,9 @@ void ExtFileStream::init() {
 	DEVICE_CHECK(VALID_STATES.count(this->superblock_get<uint16_t>(STATE)));
 	DEVICE_CHECK(VALID_ERRORS.count(this->superblock_get<uint16_t>(ERROR)));
 
+	this->device.revision = (Revision)this->superblock_get<uint32_t>(REVISION);
+	DEVICE_CHECK(VALID_REVISIONS.count(this->device.revision));
+	
 	this->device.inodes_count = this->superblock_get<uint32_t>(INODES_COUNT);
 	this->device.blocks_count = this->superblock_get<uint32_t>(BLOCKS_COUNT);
 
@@ -101,6 +121,7 @@ void ExtFileStream::init() {
 
 	this->device.first_data_block = this->superblock_get<uint32_t>(FIRST_DATA_BLOCK);
 	this->device.blocks_per_group = this->superblock_get<uint32_t>(BLOCKS_PER_GROUP);
+	this->device.inodes_per_group = this->superblock_get<uint32_t>(INODES_PER_GROUP);
 	
 	DEVICE_CHECK(this->device.first_data_block != SUPERBLOCK_OFFSET / this->device.block_size);
 }
@@ -109,16 +130,16 @@ void ExtFileStream::init_blocks(streampos absolute_offset) {
 	BlockOffsets offsets;
 	
 	offsets.block_n_abs = absolute_offset / this->device.block_size;
-	offsets.start_offset_relative_block_n = offsets.block_n_abs - this->device.first_data_block;
-	offsets.block_group_n = offsets.start_offset_relative_block_n / this->device.blocks_per_group;
+	offsets.start_offset_relative_block_n_abs = offsets.block_n_abs - this->device.first_data_block;
+	offsets.block_group_n = offsets.start_offset_relative_block_n_abs / this->device.blocks_per_group;
 	offsets.block_group_start = offsets.block_group_n * this->device.blocks_per_group;
-	offsets.block_n_rel = offsets.block_n_abs - offsets.block_group_start;
+	offsets.block_n_group_relative = offsets.block_n_abs - offsets.block_group_start;
 	
 	BlockDescriptor desc = this->read_descriptor(offsets.block_group_n);
 	
 	Bitmap blocks_bitmap = this->read_group_bitmap(desc.blocks_bitmap);
 	
-	if (blocks_bitmap[offsets.block_n_rel]) {
+	if (blocks_bitmap[offsets.block_n_group_relative]) {
 		this->rebuild_existent(desc, blocks_bitmap, offsets);
 	} else {
 		this->rebuild_deleted(desc, blocks_bitmap, offsets);
@@ -158,40 +179,17 @@ ExtFileStream::Bitmap ExtFileStream::read_group_bitmap(size_t bitmap_start_block
 }
 
 void ExtFileStream::rebuild_deleted(const ExtFileStream::BlockDescriptor &desc, const ExtFileStream::Bitmap &blocks_bitmap, const ExtFileStream::BlockOffsets &offset) {
-	size_t start = offset.block_n_rel;
+	size_t start = offset.block_n_group_relative;
 	while (this->add(blocks_bitmap, false, offset.block_group_start, start++))
 	{}
 }
+
 void ExtFileStream::rebuild_existent(const ExtFileStream::BlockDescriptor &desc, const ExtFileStream::Bitmap &blocks_bitmap, const ExtFileStream::BlockOffsets &offset) {
 	// TODO: Inodes cache powered by Bloom filters
 	INode &&inode = this->find_inode(desc, offset);
-	uint32_t next_block = END_OF_BLOCKCHAIN;
-	uint8_t i = 0;
-	do {
-		next_block = inode.blocks[i];
-		
-		if (next_block == END_OF_BLOCKCHAIN) {
-			break;
-		}
-		
-		switch (i++) {
-			case INode::FILE_BLOCKS_MAX:
-				next_block = END_OF_BLOCKCHAIN;
-				break;
-			case INODE_FILE_BLOCKS_TRIPLY_INDIRECT:
-				this->triply_indirect(blocks_bitmap, offset.block_group_start, inode.blocks[next_block]);
-				break;
-			case INODE_FILE_BLOCKS_DOUBLY_INDIRECT:
-				this->doubly_indirect(blocks_bitmap, offset.block_group_start, inode.blocks[next_block]);
-				break;
-			case INODE_FILE_BLOCKS_INDIRECT:
-				this->indirect(blocks_bitmap, offset.block_group_start, inode.blocks[next_block]);
-				break;
-			default:
-				this->add(blocks_bitmap, true, offset.block_group_start, next_block);
-				break;
-		}
-	} while (next_block != END_OF_BLOCKCHAIN);
+	this->inode_foreach(inode, [this, &blocks_bitmap, &offset] (size_t block_n_group_relative) {
+		return this->add(blocks_bitmap, true, offset.block_group_start, block_n_group_relative);
+	});
 }
 
 bool ExtFileStream::check_block(const ExtFileStream::Bitmap &blocks_bitmap, bool used, size_t block_n_group_relative) {
@@ -205,6 +203,39 @@ bool ExtFileStream::add(const Bitmap &blocks_bitmap, bool used, size_t block_gro
 		this->blocks.push_back(block_group_start + block_n_group_relative);
 	}
 	return checked;
+}
+
+INode ExtFileStream::find_inode(const ExtFileStream::BlockDescriptor &desc, const ExtFileStream::BlockOffsets &offset) {
+	size_t inodes_table_start_abs = desc.inodes_table + offset.block_group_start;
+	for (size_t i = this->device.group_first_data_inode; i < this->device.inodes_per_group; i++) {
+		INode &&inode = this->read_inode(inodes_table_start_abs + (i * inode_size));
+		bool found = false;
+		this->inode_foreach(inode, [&offset, &found] (size_t block_n_group_relative) {
+			found = block_n_group_relative == offset.block_n_group_relative;
+			return not found;
+		});
+		if (found) {
+			return std::move(inode);
+		}
+	}
+	return INode(INode::ALLOC_FULL);
+}
+
+INode ExtFileStream::read_inode(size_t inode_offset) {
+	INode inode(INode::ALLOC_FULL);1
+	bool regular = (this->get<uint16_t>(inode_offset + TYPE) & REGULAR_FILE_TYPE);
+	if (not regular) {
+		return std::move(inode);
+	}
+	inode.file_size = this->get<uint32_t>(inode_offset + FILE_SIZE);
+	if (this->device.revision != EXT2_GOOD_OLD_REV) {
+		uint64_t high_size_bytes = this->get<uint32_t>(inode_offset + DIR_ACL);
+		inode.file_size |= (high_size_bytes << 32);
+	}
+	for (size_t i = 0; i < INode::FILE_BLOCKS_MAX; i++) {
+		inode.blocks[i] = this->get<uin32_t>(inode_offset + BLOCKS + i);
+	}
+	return std::move(inode);
 }
 
 void ExtFileStream::indirect(const ExtFileStream::Bitmap &blocks_bitmap, size_t blocks_group_start, uint32_t block_pointer) {
