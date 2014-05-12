@@ -107,7 +107,7 @@ private:
 	INode find_inode(const ExtFileStream::BlockDescriptor &desc, const ExtFileStream::BlockOffsets &offset);
 	INode read_inode(size_t inode_offset);
 	
-	void inode_foreach(const INode &inode, uint32_t group_start_abs, const inode_blocks_callback_t &callback);
+	void inode_foreach(const INode &inode, uint32_t group_start_n, const inode_blocks_callback_t &callback);
 	
 	bool indirect(uint32_t blocks_group_start, uint32_t offset, const inode_blocks_callback_t &callback);
 	bool doubly_indirect(uint32_t blocks_group_start, uint32_t offset, const inode_blocks_callback_t &callback);
