@@ -23,18 +23,16 @@
 #include <cstdlib>
 #include <cstring>
 
-INode::INode(AllocType type): file_size(0) {
-	if (type == ALLOC_FULL) {
-		this->blocks = (uint32_t*)calloc(FILE_BLOCKS_MAX, sizeof(uint32_t));
-		memset(this->blocks, 0, FILE_BLOCKS_MAX * sizeof(uint32_t)); // TODO: If this necessary?
-	} else {
-		this->blocks = nullptr;
-	}
+INode::INode(): file_size(0) {
+	this->blocks = (uint32_t*)calloc(FILE_BLOCKS_MAX, sizeof(uint32_t));
+	memset(this->blocks, 0, FILE_BLOCKS_MAX * sizeof(uint32_t)); // TODO: If this necessary?
 }
 
 INode::INode(INode && other) {
-	std::swap(this->file_size, other.file_size);
-	std::swap(this->blocks, other.blocks);
+	this->file_size = other.file_size;
+	this->blocks = other.blocks;
+	other.file_size = 0;
+	other.blocks = nullptr;
 }
 
 INode::~INode() {

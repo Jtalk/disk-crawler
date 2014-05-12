@@ -22,22 +22,11 @@
 
 struct INode {
 	static const uint8_t FILE_BLOCKS_MAX = 15;
-	
-	enum AllocType {
-		ALLOC_EMPTY,
-		ALLOC_FULL,
-	};
-	
+		
 	uint64_t file_size;
 	uint32_t *blocks;
 	
-	/*
-	 * AllocType is kinda workarond disabling auto heap buffer allocation (which is slow)
-	 * in case of move construction preparations while empty object is created before move
-	 * assignment operator is called. Compiler will default-construct an object which
-	 * will not allocate any heap space.
-	 */
-	INode(AllocType type = ALLOC_EMPTY);
+	INode();
 	INode(INode &&other);
 	~INode();
 	

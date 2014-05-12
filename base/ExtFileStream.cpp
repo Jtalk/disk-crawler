@@ -233,11 +233,11 @@ INode ExtFileStream::find_inode(const ExtFileStream::BlockDescriptor &desc, cons
 			return std::move(inode);
 		}
 	}
-	return INode(INode::ALLOC_FULL);
+	return INode();
 }
 
 INode ExtFileStream::read_inode(size_t inode_offset) {
-	INode inode(INode::ALLOC_FULL);
+	INode inode();
 	bool regular = (this->get<uint16_t>(inode_offset + TYPE) & REGULAR_FILE_TYPE);
 	if (not regular) {
 		return inode;
