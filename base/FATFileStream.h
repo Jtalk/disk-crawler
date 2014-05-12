@@ -72,7 +72,7 @@ class FATFileStream : public FSFileStream
         size_t eoc() const;
         
 public:
-        FATFileStream(const std::string &device_name, streampos absolute_offset);
+        FATFileStream(const std::string &device_name, streampos absolute_offset = 0);
         virtual ~FATFileStream();
         
         virtual streampos read(Buffer &buffer, streampos size) override;

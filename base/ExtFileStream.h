@@ -74,7 +74,9 @@ public:
 	};
 	
 private:
-	typedef std::vector<bool> Bitmap;
+	static const streampos FS_TEST_OFFSET = 32 * 1024; // Second block with 32 kbytes block size
+	
+	typedef std::vector<char> Bitmap;
 	typedef std::function<bool(size_t)> inode_blocks_callback_t;
 
 	std::deque<size_t> blocks;
@@ -113,7 +115,7 @@ private:
 protected:
 
 public:
-	ExtFileStream(const std::string &device_name, streampos absolute_offset);
+	ExtFileStream(const std::string &device_name, streampos absolute_offset = FS_TEST_OFFSET);
 
 	virtual streampos read(Buffer &buffer, streampos size);
 

@@ -24,7 +24,7 @@
 
 template<class FileStream>
 bool is(const std::string &device_name) {
-	FileStream stream(device_name, 0);
+	FileStream stream(device_name);
 	return stream.info().correct;
 }
 
