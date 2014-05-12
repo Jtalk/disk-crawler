@@ -352,7 +352,7 @@ FSFileStream::streampos ExtFileStream::read(Buffer &buffer, streampos size) {
 }
 
 bool ExtFileStream::eof() const {
-	return feof(this->stream) or ferror(this->stream) or not this->correct();
+	return feof(this->stream) or ferror(this->stream) or not this->correct() or this->offset >= this->blocks.size() * this->device.block_size;
 }
 
 ExtFileStream::streampos ExtFileStream::tellg() const {
