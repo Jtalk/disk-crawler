@@ -212,7 +212,7 @@ void ExtFileStream::rebuild_existent(const ExtFileStream::BlockDescriptor &desc,
 
 bool ExtFileStream::check_block(const Bitmap &blocks_bitmap, bool used, size_t block_n_group_relative) {
 	bool fits_bitmap = blocks_bitmap.size() > block_n_group_relative;
-	return fits_bitmap and blocks_bitmap.test(block_n_group_relative) == used;
+	return block_n_group_relative != END_OF_BLOCKCHAIN and fits_bitmap and blocks_bitmap.test(block_n_group_relative) == used;
 }
 
 bool ExtFileStream::add(const Bitmap &blocks_bitmap, bool used, size_t block_group_start, size_t block_n_group_relative) {
