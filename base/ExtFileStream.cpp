@@ -30,6 +30,10 @@
 		return; \
 	} (void)0
 
+const uint8_t ExtFileStream::INODE_FILE_BLOCKS_INDIRECT;
+const uint8_t ExtFileStream::INODE_FILE_BLOCKS_DOUBLY_INDIRECT;
+const uint8_t ExtFileStream::INODE_FILE_BLOCKS_TRIPLY_INDIRECT;
+
 enum ExtOffsets : size_t {
         INODES_COUNT = 0x00,
         BLOCKS_COUNT = 0x04,
