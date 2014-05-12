@@ -146,7 +146,7 @@ void ExtFileStream::init_blocks(streampos absolute_offset) {
 	
 	BlockDescriptor desc = this->read_descriptor(offsets.block_group_n);
 	
-	Bitmap &&blocks_bitmap = this->read_group_bitmap(desc.blocks_bitmap);
+	Bitmap blocks_bitmap = this->read_group_bitmap(desc.blocks_bitmap);
 	
 	if (offsets.block_n_group_relative >= blocks_bitmap.size()) {
 		this->is_correct = false;
@@ -200,7 +200,7 @@ void ExtFileStream::rebuild_deleted(const Bitmap &blocks_bitmap, const ExtFileSt
 
 void ExtFileStream::rebuild_existent(const ExtFileStream::BlockDescriptor &desc, const Bitmap &blocks_bitmap, const ExtFileStream::BlockOffsets &offset) {
 	// TODO: Inodes cache powered by Bloom filters
-	INode &&inode = this->find_inode(desc, offset);
+	INode inode = this->find_inode(desc, offset);
 	this->inode_foreach(inode, offset.block_group_start, [this, &blocks_bitmap, &offset] (size_t block_n_group_relative) {
 		return this->add(blocks_bitmap, true, offset.block_group_start, block_n_group_relative);
 	});
