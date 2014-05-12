@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <cinttypes>
+
 struct INode {
 	static const uint8_t FILE_BLOCKS_MAX = 15;
 	

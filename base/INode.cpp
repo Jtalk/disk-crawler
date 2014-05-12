@@ -18,7 +18,10 @@
 
 #include "INode.h"
 
+#include <utility>
+
 #include <cstdlib>
+#include <cstring>
 
 INode::INode(AllocType type): file_size(0) {
 	if (type == ALLOC_FULL) {

@@ -20,7 +20,6 @@
 
 #include "utility.h"
 
-#include <functional>
 #include <unordered_set>
 
 #include <cstdio>
@@ -85,11 +84,6 @@ static const std::unordered_set<uint16_t> VALID_ERRORS = {
 	EXT2_ERRORS_PANIC,
 };
 
-static const std::unordered_set<uint32_t> VALID_REVISIONS = {
-	ExtFileStream::EXT2_GOOD_OLD_REV,
-	ExtFileStream::EXT2_DYNAMIC_REV,
-};
-
 ExtFileStream::ExtFileStream(const std::string &device_name, streampos absolute_offset)
 	: FSFileStream(device_name), is_correct(true), offset(0) {
 	this->init();
@@ -113,7 +107,6 @@ void ExtFileStream::init() {
 	DEVICE_CHECK(VALID_ERRORS.count(this->superblock_get<uint16_t>(ERROR)));
 
 	this->device.revision = (Revision)this->superblock_get<uint32_t>(REVISION);
-	DEVICE_CHECK(VALID_REVISIONS.count(this->device.revision));
 	
 	this->device.inodes_count = this->superblock_get<uint32_t>(INODES_COUNT);
 	this->device.blocks_count = this->superblock_get<uint32_t>(BLOCKS_COUNT);
@@ -153,7 +146,7 @@ void ExtFileStream::init_blocks(streampos absolute_offset) {
 	if (blocks_bitmap[offsets.block_n_group_relative]) {
 		this->rebuild_existent(desc, blocks_bitmap, offsets);
 	} else {
-		this->rebuild_deleted(desc, blocks_bitmap, offsets);
+		this->rebuild_deleted(blocks_bitmap, offsets);
 	}
 }
 
@@ -189,7 +182,7 @@ ExtFileStream::Bitmap ExtFileStream::read_group_bitmap(size_t bitmap_start_block
 	return std::move(result);
 }
 
-void ExtFileStream::rebuild_deleted(const ExtFileStream::BlockDescriptor &desc, const ExtFileStream::Bitmap &blocks_bitmap, const ExtFileStream::BlockOffsets &offset) {
+void ExtFileStream::rebuild_deleted(const ExtFileStream::Bitmap &blocks_bitmap, const ExtFileStream::BlockOffsets &offset) {
 	size_t start = offset.block_n_group_relative;
 	while (this->add(blocks_bitmap, false, offset.block_group_start, start++))
 	{}
@@ -209,7 +202,7 @@ bool ExtFileStream::check_block(const ExtFileStream::Bitmap &blocks_bitmap, bool
 }
 
 bool ExtFileStream::add(const Bitmap &blocks_bitmap, bool used, size_t block_group_start, size_t block_n_group_relative) {
-	bool checked = check_block(blocks_bitmap, used, block_group_start, block_n_group_relative);
+	bool checked = check_block(blocks_bitmap, used, block_n_group_relative);
 	if (checked) {
 		this->blocks.push_back(block_group_start + block_n_group_relative);
 	}
@@ -244,7 +237,7 @@ INode ExtFileStream::read_inode(size_t inode_offset) {
 		inode.file_size |= (high_size_bytes << 32);
 	}
 	for (size_t i = 0; i < INode::FILE_BLOCKS_MAX; i++) {
-		inode.blocks[i] = this->get<uin32_t>(inode_offset + BLOCKS + i);
+		inode.blocks[i] = this->get<uint32_t>(inode_offset + BLOCKS + i);
 	}
 	return std::move(inode);
 }
@@ -257,7 +250,7 @@ void ExtFileStream::inode_foreach(const INode &inode, uint32_t group_start_abs, 
 		}
 	}
 	
-	static const std::pair<uint8_t, std::function<uint32_t, uint32_t, const inode_blocks_callback_t&>> HANDLERS[] = {
+	static const std::pair<uint8_t, std::function<bool(ExtFileStream*const, uint32_t, uint32_t, const inode_blocks_callback_t&)>> HANDLERS[] = {
 		{INODE_FILE_BLOCKS_INDIRECT, &ExtFileStream::indirect},
 		{INODE_FILE_BLOCKS_DOUBLY_INDIRECT, &ExtFileStream::doubly_indirect},
 		{INODE_FILE_BLOCKS_TRIPLY_INDIRECT, &ExtFileStream::triply_indirect},		
@@ -265,7 +258,7 @@ void ExtFileStream::inode_foreach(const INode &inode, uint32_t group_start_abs, 
 	
 	for (auto &handler : HANDLERS) {
 		uint32_t offset = inode.blocks[handler.first];
-		if (offset == END_OF_BLOCKCHAIN or not handler.second(group_start_abs, offset, callback)) {
+		if (offset == END_OF_BLOCKCHAIN or not handler.second(this, group_start_abs, offset, callback)) {
 			return;
 		}
 	}
@@ -310,7 +303,7 @@ FSFileStream::streampos ExtFileStream::read(Buffer &buffer, streampos size) {
 	uint32_t block_n = this->offset / this->device.block_size;
 	uint32_t in_block_offset = this->offset % this->device.block_size;
 	
-	DEBUG_ASSERT(this->blocks.empty(), "No blocks in Ext file stream reader");
+	DEBUG_ASSERT(this->blocks.empty(), "No blocks in Ext file stream reader offset %u", this->offset);
 	
 	if (block_n >= this->blocks.size()) {
 		return npos;
@@ -321,7 +314,7 @@ FSFileStream::streampos ExtFileStream::read(Buffer &buffer, streampos size) {
 	do {
 		uint32_t block_start = this->blocks[block_n];
 		uint32_t read_start = block_start + in_block_offset;
-		uint16_t read_size = std::min(size, this->device.block_size + block_start - read_start);
+		uint16_t read_size = std::min<streampos>(size, this->device.block_size + block_start - read_start);
 		
 		size_t bytes_read = fread(buffer.begin() + total_read, 1, read_size, this->stream);
 		
@@ -343,7 +336,7 @@ bool ExtFileStream::eof() const {
 	return feof(this->stream) or ferror(this->stream) or not this->correct();
 }
 
-streampos ExtFileStream::tellg() const {
+ExtFileStream::streampos ExtFileStream::tellg() const {
 	return this->offset;
 }
 

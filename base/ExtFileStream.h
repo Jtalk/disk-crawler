@@ -21,6 +21,8 @@
 #include "FSFileStream.h"
 #include "INode.h"
 
+#include <deque>
+#include <functional>
 #include <vector>
 
 class ExtFileStream : public FSFileStream {
@@ -96,7 +98,7 @@ private:
 	Bitmap read_group_bitmap(size_t bitmap_start_block_n);
 	
 	void rebuild_existent(const BlockDescriptor &desc, const Bitmap &blocks_bitmap, const BlockOffsets &offset);
-	void rebuild_deleted(const BlockDescriptor &desc, const Bitmap &blocks_bitmap, const BlockOffsets &offset);
+	void rebuild_deleted(const Bitmap &blocks_bitmap, const BlockOffsets &offset);
 	
 	bool add(const Bitmap &blocks_bitmap, bool used, size_t block_group_start, size_t block_n_group_relative);
 	INode find_inode(const ExtFileStream::BlockDescriptor &desc, const ExtFileStream::BlockOffsets &offset);
