@@ -22,6 +22,7 @@
 #include "FSFileStream.h"
 #include "Log.h"
 
+#include "PlainDecoder.h"
 #include "ZipDecoder.h"
 
 #include "utility.h"
@@ -51,6 +52,7 @@ SignatureWalker::signatures_t SignatureWalker::make_signatures()
 
 	new_signatures[ZIP] = byte_array_t {0x50, 0x4B, 0x03, 0x04};
 	new_signatures[RAR] = byte_array_t {0x52, 0x61, 0x72, 0x21, 0x1A, 0x07};
+	new_signatures[PLAIN] = byte_array_t {0x2f, 0x2a, 0x0a, 0x20, 0x20, 0x20, 0x20, 0x44};
 
 	return new_signatures;
 }
@@ -114,6 +116,8 @@ BaseDecoder* SignatureWalker::decode(FSFileStream* stream, SignatureType signatu
 		return new ZipDecoder(to_decode);
 	case RAR:
 		return new ZipDecoder(to_decode);
+	case PLAIN:
+		return new PlainDecoder(to_decode);
 
 	case MAX_SIGNATURE:
 		break;
