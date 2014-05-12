@@ -19,16 +19,14 @@
 
 #pragma once
 
-#include "FSWalker.h"
+#include "SignatureWalker.h"
 
-struct PlainWalker : public FSWalker {
+struct PlainWalker : public SignatureWalker {
 	PlainWalker(const std::string &device_name);
 
 	virtual results_t find(const byte_array_t& to_find) override;
 	
 private:	
-	virtual possible_matches_t find_by_signatures() const override
-	{return possible_matches_t();}
 	virtual FSFileStream* traceback(size_t) const override
 	{return nullptr;}
 };

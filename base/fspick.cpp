@@ -18,19 +18,25 @@
 
 #include "fspick.h"
 
+#include "ExtFileStream.h"
 #include "FATFileStream.h"
 #include "FATWalker.h"
 
-bool is_fat(const std::string &device_name) {
-	FATFileStream fat(device_name, 0);
-	return fat.info().correct;
+template<class FileStream>
+bool is(const std::string &device_name) {
+	FileStream stream(device_name, 0);
+	return stream.info().correct;
 }
 
-FSWalker::walkers_t fspick(const std::string &device_name) {
-	FSWalker::walkers_t result;
+SignatureWalker::walkers_t fspick(const std::string &device_name) {
+	SignatureWalker::walkers_t result;
 	
-	if (is_fat(device_name)) {
+	if (is<FATFileStream>(device_name)) {
 		result.push_back(new FATWalker(device_name));
+	}
+	
+	if (is<ExtFileStream>(device_name)) {
+		//result.push_back(new ExtWalker(device_name));
 	}
 	
 	return result;

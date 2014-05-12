@@ -11,9 +11,9 @@ set (CRAWLERBASE_SOURCES
   ExtFileStream.cpp 
   FATFileStream.cpp 
   FATWalker.cpp 
-  FSWalker.cpp 
   FSFileStream.cpp
   INode.cpp 
+  SignatureWalker.cpp 
   ZipDecoder.cpp 
   PlainDecoder.cpp 
   PlainFileStream.cpp 
@@ -33,9 +33,9 @@ set (CRAWLERBASE_HEADERS
   ExtFileStream.h
   FATFileStream.h
   FATWalker.h
-  FSWalker.h 
   FSFileStream.h
   INode.h
+  SignatureWalker.h 
   ZipDecoder.h 
   PlainDecoder.h 
   PlainFileStream.h

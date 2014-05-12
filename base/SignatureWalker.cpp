@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "FSWalker.h"
+#include "SignatureWalker.h"
 
 #include "BaseDecoder.h"
 #include "FSFileStream.h"
@@ -26,24 +26,26 @@
 
 #include "utility.h"
 
+#include <algorithm>
+
 #include <cstdio>
 
-const FSWalker::signatures_t FSWalker::signatures(FSWalker::make_signatures());
+const SignatureWalker::signatures_t SignatureWalker::signatures(SignatureWalker::make_signatures());
 
-FSWalker::FSWalker(const std::string &device_name):
+SignatureWalker::SignatureWalker(const std::string &device_name):
 	device_name(device_name)
 {
 	this->device = fopen(this->device_name.c_str(), "rb");
 }
 
-FSWalker::~FSWalker()
+SignatureWalker::~SignatureWalker()
 {
 	if (this->device != nullptr) {
 		fclose(this->device);
 	}
 }
 
-FSWalker::signatures_t FSWalker::make_signatures()
+SignatureWalker::signatures_t SignatureWalker::make_signatures()
 {
 	signatures_t new_signatures((size_t)MAX_SIGNATURE);
 
@@ -53,7 +55,57 @@ FSWalker::signatures_t FSWalker::make_signatures()
 	return new_signatures;
 }
 
-BaseDecoder* FSWalker::decode(FSFileStream* stream, SignatureType signature)
+static bool length_comparator(const byte_array_t &a, const byte_array_t &b)
+{
+        return a.length() < b.length();
+}
+
+SignatureWalker::possible_matches_t SignatureWalker::find_by_signatures() const
+{
+        possible_matches_t matches;
+        
+        static const size_t BUFFER_OVERLAP = std::max_element(signatures.cbegin(), signatures.cend(), length_comparator)->length();
+        static const size_t BUFFER_SIZE = 100000000;
+	
+        Buffer buffer(BUFFER_SIZE);
+
+        while (!feof(this->device) && !ferror(this->device) && ftell(this->device) != -1) {
+                size_t pos = ftell(this->device);
+                
+		buffer.reset(BUFFER_SIZE);
+		auto read_bytes = fread(buffer.begin(), 1, BUFFER_SIZE, this->device);
+		buffer.shrink(read_bytes);
+		
+                for (size_t signature_type = 0; signature_type < MAX_SIGNATURE; signature_type++) {
+			const auto &signature = signatures[signature_type];
+			size_t in_buffer_offset = 0;
+			do {
+				size_t found_pos = utility::str_find(buffer, signature);
+				
+				if (found_pos == Buffer::npos) {
+					break;
+				}
+				
+				in_buffer_offset += found_pos;
+				buffer.move_front(found_pos + signature.length(), buffer.size() - found_pos - signature.length());
+				matches.push_front({pos + in_buffer_offset, (SignatureType)signature_type});
+			} while (true);
+			
+			buffer.reset_offset();
+                }
+                
+                if (feof(this->device) || ferror(this->device))
+			break;
+                
+		fseek(this->device, -BUFFER_OVERLAP, SEEK_CUR);
+                
+                usleep(500);
+        }
+        
+        return matches;
+}
+
+BaseDecoder* SignatureWalker::decode(FSFileStream* stream, SignatureType signature)
 {
 	BaseDecoder::stream_t to_decode(stream);
 
@@ -72,7 +124,7 @@ BaseDecoder* FSWalker::decode(FSFileStream* stream, SignatureType signature)
 	return nullptr;
 }
 
-FSWalker::results_t FSWalker::find(FSFileStream *stream, SignatureType type, const byte_array_t &to_find)
+SignatureWalker::results_t SignatureWalker::find(FSFileStream *stream, SignatureType type, const byte_array_t &to_find)
 {
 	auto decoder = this->decode(stream, type);
 
@@ -104,7 +156,7 @@ FSWalker::results_t FSWalker::find(FSFileStream *stream, SignatureType type, con
 	return std::move(results);
 }
 
-FSWalker::results_t FSWalker::find(const byte_array_t& to_find)
+SignatureWalker::results_t SignatureWalker::find(const byte_array_t& to_find)
 {
 	auto signature_matches = this->find_by_signatures();
 
@@ -133,7 +185,7 @@ FSWalker::results_t FSWalker::find(const byte_array_t& to_find)
 	return found;
 }
 
-bool FSWalker::operator !() const
+bool SignatureWalker::operator !() const
 {
 	return !this->device;
 }

@@ -32,12 +32,12 @@ class BaseDecoder;
 class ByteReader;
 class FSFileStream;
 
-class FSWalker {
+class SignatureWalker {
 public:
 	typedef std::list<size_t> offsets_t;
 	typedef std::pair<ByteReader*, offsets_t> result_t;
 	typedef std::list<result_t> results_t;
-	typedef std::list<FSWalker*> walkers_t;
+	typedef std::list<SignatureWalker*> walkers_t;
 
 protected:
 	enum SignatureType {
@@ -61,13 +61,14 @@ protected:
 	device_t device;
 	const std::string device_name;
 
+	possible_matches_t find_by_signatures() const;
+	
 	virtual FSFileStream *traceback(size_t absolute_offset) const = 0;
-	virtual possible_matches_t find_by_signatures() const = 0;
 
 private:
-	FSWalker() = delete;
-	FSWalker(const FSWalker& other) = delete;
-	virtual FSWalker& operator=(const FSWalker& other) = delete;
+	SignatureWalker() = delete;
+	SignatureWalker(const SignatureWalker& other) = delete;
+	virtual SignatureWalker& operator=(const SignatureWalker& other) = delete;
 
 	results_t find(FSFileStream *stream, SignatureType type, const byte_array_t &to_find);
 	BaseDecoder* decode(FSFileStream* stream, SignatureType signature);
@@ -75,14 +76,10 @@ private:
 public:
 	static signatures_t make_signatures();
 
-	FSWalker(const std::string &device_name);
-	virtual ~FSWalker();
+	SignatureWalker(const std::string &device_name);
+	virtual ~SignatureWalker();
 
 	virtual results_t find(const byte_array_t &to_find);
 
 	bool operator !() const;
 };
-
-inline constexpr const uint8_t* operator "" _us(const char *s, size_t) {
-	return (const uint8_t*) s;
-}

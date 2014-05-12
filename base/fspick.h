@@ -18,6 +18,6 @@
 
 #pragma once
 
-#include "FSWalker.h"
+#include "SignatureWalker.h"
 
-FSWalker::walkers_t fspick(const std::string &device_name);
+SignatureWalker::walkers_t fspick(const std::string &device_name);

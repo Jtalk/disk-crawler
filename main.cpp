@@ -46,7 +46,7 @@ enum Status {
         NOT_ENOUGH_ARGUMENTS = -3,
 };
 
-void output(const FSWalker::results_t &results, size_t chunk_size) {
+void output(const SignatureWalker::results_t &results, size_t chunk_size) {
 	for (auto & result : results) {
 
 		auto &reader = result.first;
@@ -86,8 +86,8 @@ void output(const FSWalker::results_t &results, size_t chunk_size) {
 	}
 }
 
-Status walk(const string &filename, const byte_array_t &to_find, FSWalker::results_t &results) {
-	FSWalker::walkers_t walkers;
+Status walk(const string &filename, const byte_array_t &to_find, SignatureWalker::results_t &results) {
+	SignatureWalker::walkers_t walkers;
 
 	auto plain = new PlainWalker(filename);
 	if (not plain->operator!()) {
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
 
 	Options opts = cmdopts(argc, (const char**)argv);
 
-	FSWalker::results_t found;
+	SignatureWalker::results_t found;
 	auto status = walk(opts.filename, opts.to_find, found);
 
 	if (status != SUCCESS) {

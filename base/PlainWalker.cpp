@@ -24,10 +24,10 @@
 #include "utility.h"
 
 PlainWalker::PlainWalker(const std::string &device_name):
-	FSWalker(device_name)
+	SignatureWalker(device_name)
 {}
 
-FSWalker::results_t PlainWalker::find(const byte_array_t &to_find) {
+SignatureWalker::results_t PlainWalker::find(const byte_array_t &to_find) {
 	auto decoder = new PlainFileStream(this->device_name);
 	
 	results_t results;

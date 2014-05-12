@@ -18,27 +18,12 @@
 
 #pragma once
 
-#include "FSWalker.h"
+#include "SignatureWalker.h"
 
-class FATWalker : public FSWalker
-{       
-        enum Offset {
-                SECTOR_SIZE = 0x0B,
-                SECTORS_PER_CLUSTER = 0x0D, 
-                NUMBER_OF_TABLES = 0x010, 
-                NUMBER_OF_ROOT_DIRECTORY_ENTRIES = 0x011
-        };
-        
-        enum DirectoryEntryOffset {
-                FILE_NAME = 0x0, 
-                FILE_SIZE = 0x1c
-        };
-        
-        size_t data_offset() const;
-        
+class FATWalker : public SignatureWalker
+{        
 protected:
         virtual FSFileStream* traceback(size_t absolute_offset) const;
-        virtual possible_matches_t find_by_signatures() const;
                 
 public:
         FATWalker(const std::string &device_name);
