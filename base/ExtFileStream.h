@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "Bitmap.h"
 #include "FSFileStream.h"
 #include "INode.h"
 
@@ -76,7 +77,6 @@ public:
 private:
 	static const streampos FS_TEST_OFFSET = 32 * 1024; // Second block with 32 kbytes block size
 	
-	typedef std::vector<char> Bitmap;
 	typedef std::function<bool(size_t)> inode_blocks_callback_t;
 
 	std::deque<size_t> blocks;

@@ -5,6 +5,7 @@ set (CRAWLERBASE_SOURCES
   Config.cpp
   Log.cpp
   utility.cpp
+  Bitmap.cpp
   Buffer.cpp
   OverlapBuffer.cpp 
   BaseDecoder.cpp
@@ -22,11 +23,12 @@ set (CRAWLERBASE_SOURCES
 set (CRAWLERBASE_HEADERS
   cmdopts.h 
   fspick.h
-  ByteReader.h 
   Config.h
   Log.h
   utility.h
+  Bitmap.h
   Buffer.h
+  ByteReader.h 
   OverlapBuffer.h
   BaseDecoder.h
   ExtFileStream.h

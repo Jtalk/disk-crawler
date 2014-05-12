@@ -22,6 +22,7 @@
 
 #include <unordered_set>
 
+#include <cmath>
 #include <cstdio>
 
 #define DEVICE_CHECK(expr) \
@@ -145,14 +146,14 @@ void ExtFileStream::init_blocks(streampos absolute_offset) {
 	
 	BlockDescriptor desc = this->read_descriptor(offsets.block_group_n);
 	
-	Bitmap blocks_bitmap = this->read_group_bitmap(desc.blocks_bitmap);
+	Bitmap &&blocks_bitmap = this->read_group_bitmap(desc.blocks_bitmap);
 	
 	if (offsets.block_n_group_relative >= blocks_bitmap.size()) {
 		this->is_correct = false;
 		return;
 	}
 	
-	if (blocks_bitmap[offsets.block_n_group_relative]) {
+	if (blocks_bitmap.test(offsets.block_n_group_relative)) {
 		this->rebuild_existent(desc, blocks_bitmap, offsets);
 	} else {
 		this->rebuild_deleted(blocks_bitmap, offsets);
@@ -173,10 +174,11 @@ ExtFileStream::BlockDescriptor ExtFileStream::read_descriptor(size_t block_group
 	return desc;
 }
 
-ExtFileStream::Bitmap ExtFileStream::read_group_bitmap(size_t bitmap_start_block_n) {
-	Buffer buffer(this->device.blocks_per_group);
+Bitmap ExtFileStream::read_group_bitmap(size_t bitmap_start_block_n) {
+	size_t bytes_size = ceil(this->device.blocks_per_group / 8.f);
+	Buffer buffer(bytes_size);
 	fseek(this->stream, bitmap_start_block_n * this->device.block_size, SEEK_SET);
-	auto read = fread(buffer.begin(), 1, this->device.blocks_per_group, this->stream);
+	auto read = fread(buffer.begin(), 1, bytes_size, this->stream);
 	buffer.shrink(read);
 	
 	if (buffer.empty()) {
@@ -185,21 +187,18 @@ ExtFileStream::Bitmap ExtFileStream::read_group_bitmap(size_t bitmap_start_block
 	}
 	
 	Bitmap result;
-	result.reserve(read);
-	for (uint8_t item : buffer) {
-		result.push_back(item);
-	}
+	result.set(buffer, this->device.blocks_per_group);
 	
 	return result;
 }
 
-void ExtFileStream::rebuild_deleted(const ExtFileStream::Bitmap &blocks_bitmap, const ExtFileStream::BlockOffsets &offset) {
+void ExtFileStream::rebuild_deleted(const Bitmap &blocks_bitmap, const ExtFileStream::BlockOffsets &offset) {
 	size_t start = offset.block_n_group_relative;
 	while (this->add(blocks_bitmap, false, offset.block_group_start, start++))
 	{}
 }
 
-void ExtFileStream::rebuild_existent(const ExtFileStream::BlockDescriptor &desc, const ExtFileStream::Bitmap &blocks_bitmap, const ExtFileStream::BlockOffsets &offset) {
+void ExtFileStream::rebuild_existent(const ExtFileStream::BlockDescriptor &desc, const Bitmap &blocks_bitmap, const ExtFileStream::BlockOffsets &offset) {
 	// TODO: Inodes cache powered by Bloom filters
 	INode &&inode = this->find_inode(desc, offset);
 	this->inode_foreach(inode, offset.block_group_start, [this, &blocks_bitmap, &offset] (size_t block_n_group_relative) {
@@ -207,9 +206,9 @@ void ExtFileStream::rebuild_existent(const ExtFileStream::BlockDescriptor &desc,
 	});
 }
 
-bool ExtFileStream::check_block(const ExtFileStream::Bitmap &blocks_bitmap, bool used, size_t block_n_group_relative) {
+bool ExtFileStream::check_block(const Bitmap &blocks_bitmap, bool used, size_t block_n_group_relative) {
 	bool fits_bitmap = blocks_bitmap.size() > block_n_group_relative;
-	return fits_bitmap and blocks_bitmap[block_n_group_relative] == used;
+	return fits_bitmap and blocks_bitmap.test(block_n_group_relative) == used;
 }
 
 bool ExtFileStream::add(const Bitmap &blocks_bitmap, bool used, size_t block_group_start, size_t block_n_group_relative) {
@@ -237,7 +236,7 @@ INode ExtFileStream::find_inode(const ExtFileStream::BlockDescriptor &desc, cons
 }
 
 INode ExtFileStream::read_inode(size_t inode_offset) {
-	INode inode();
+	INode inode;
 	bool regular = (this->get<uint16_t>(inode_offset + TYPE) & REGULAR_FILE_TYPE);
 	if (not regular) {
 		return inode;
