@@ -125,7 +125,7 @@ void ExtFileStream::init() {
 	this->device.blocks_per_group = this->superblock_get<uint32_t>(BLOCKS_PER_GROUP);
 	this->device.inodes_per_group = this->superblock_get<uint32_t>(INODES_PER_GROUP);
 	
-	DEVICE_CHECK(this->device.first_data_block != SUPERBLOCK_OFFSET / this->device.block_size);
+	DEVICE_CHECK(this->device.first_data_block == SUPERBLOCK_OFFSET / this->device.block_size);
 	
 	if (this->device.revision == EXT2_GOOD_OLD_REV) {
 		this->device.group_first_data_inode = REV_0_INODE_TABLE_RESERVED_ENTRIES_COUNT;
