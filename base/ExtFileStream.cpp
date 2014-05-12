@@ -147,13 +147,18 @@ void ExtFileStream::init_blocks(streampos absolute_offset) {
 	
 	Bitmap blocks_bitmap = this->read_group_bitmap(desc.blocks_bitmap);
 	
-	DEBUG_ASSERT(offsets.block_n_group_relative < blocks_bitmap.size(), "Invalid blocks group bitmap size: %u when block number is %u", blocks_bitmap.size(), offsets.block_n_group_relative);
+	if (offsets.block_n_group_relative >= blocks_bitmap.size()) {
+		this->is_correct = false;
+		return;
+	}
 	
 	if (blocks_bitmap[offsets.block_n_group_relative]) {
 		this->rebuild_existent(desc, blocks_bitmap, offsets);
 	} else {
 		this->rebuild_deleted(blocks_bitmap, offsets);
 	}
+	
+	this->is_correct = not this->blocks.empty();
 }
 
 ExtFileStream::BlockDescriptor ExtFileStream::read_descriptor(size_t block_group_n) {
