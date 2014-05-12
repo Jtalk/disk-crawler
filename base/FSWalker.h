@@ -20,12 +20,23 @@
 
 #include "SignatureWalker.h"
 
-class FATWalker : public SignatureWalker
+template<class FileStreamer>
+class FSWalker : public SignatureWalker
 {        
 protected:
-        virtual FSFileStream* traceback(size_t absolute_offset) const;
+        virtual FSFileStream* traceback(size_t absolute_offset) const {
+		auto stream = new FileStreamer(this->device_name, (typename FileStreamer::streampos)absolute_offset);
+		if (stream->correct())
+			return stream;
+		delete stream;
+		return nullptr;                
+	}
                 
 public:
-        FATWalker(const std::string &device_name);
-        virtual ~FATWalker();
+        FSWalker(const std::string &device_name):
+		SignatureWalker(device_name)
+	{}
+	
+        virtual ~FSWalker()
+	{}
 };

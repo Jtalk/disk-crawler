@@ -20,7 +20,7 @@
 
 #include "ExtFileStream.h"
 #include "FATFileStream.h"
-#include "FATWalker.h"
+#include "FSWalker.h"
 
 template<class FileStream>
 bool is(const std::string &device_name) {
@@ -32,11 +32,11 @@ SignatureWalker::walkers_t fspick(const std::string &device_name) {
 	SignatureWalker::walkers_t result;
 	
 	if (is<FATFileStream>(device_name)) {
-		result.push_back(new FATWalker(device_name));
+		result.push_back(new FSWalker<FATFileStream>(device_name));
 	}
 	
 	if (is<ExtFileStream>(device_name)) {
-		//result.push_back(new ExtWalker(device_name));
+		result.push_back(new FSWalker<ExtFileStream>(device_name));
 	}
 	
 	return result;

@@ -10,7 +10,6 @@ set (CRAWLERBASE_SOURCES
   BaseDecoder.cpp
   ExtFileStream.cpp 
   FATFileStream.cpp 
-  FATWalker.cpp 
   FSFileStream.cpp
   INode.cpp 
   SignatureWalker.cpp 
@@ -32,7 +31,7 @@ set (CRAWLERBASE_HEADERS
   BaseDecoder.h
   ExtFileStream.h
   FATFileStream.h
-  FATWalker.h
+  FSWalker.h
   FSFileStream.h
   INode.h
   SignatureWalker.h 

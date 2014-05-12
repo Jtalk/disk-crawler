@@ -18,7 +18,7 @@
 
 #include "base/BaseDecoder.h"
 #include "base/Config.h"
-#include "base/FATWalker.h"
+#include "base/FSWalker.h"
 #include "base/Log.h"
 #include "base/PlainWalker.h"
 
