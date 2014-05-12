@@ -140,12 +140,14 @@ void ExtFileStream::init_blocks(streampos absolute_offset) {
 	offsets.block_n_abs = absolute_offset / this->device.block_size;
 	offsets.start_offset_relative_block_n_abs = offsets.block_n_abs - this->device.first_data_block;
 	offsets.block_group_n = offsets.start_offset_relative_block_n_abs / this->device.blocks_per_group;
-	offsets.block_group_start = offsets.block_group_n * this->device.blocks_per_group;
+	offsets.block_group_start = offsets.block_group_n * this->device.blocks_per_group + this->device.first_data_block;
 	offsets.block_n_group_relative = offsets.block_n_abs - offsets.block_group_start;
 	
 	BlockDescriptor desc = this->read_descriptor(offsets.block_group_n);
 	
 	Bitmap blocks_bitmap = this->read_group_bitmap(desc.blocks_bitmap);
+	
+	DEBUG_ASSERT(offsets.block_n_group_relative < blocks_bitmap.size(), "Invalid blocks group bitmap size: %u when block number is %u", blocks_bitmap.size(), offsets.block_n_group_relative);
 	
 	if (blocks_bitmap[offsets.block_n_group_relative]) {
 		this->rebuild_existent(desc, blocks_bitmap, offsets);
@@ -183,7 +185,7 @@ ExtFileStream::Bitmap ExtFileStream::read_group_bitmap(size_t bitmap_start_block
 		result.push_back(item);
 	}
 	
-	return std::move(result);
+	return result;
 }
 
 void ExtFileStream::rebuild_deleted(const ExtFileStream::Bitmap &blocks_bitmap, const ExtFileStream::BlockOffsets &offset) {
@@ -233,7 +235,7 @@ INode ExtFileStream::read_inode(size_t inode_offset) {
 	INode inode(INode::ALLOC_FULL);
 	bool regular = (this->get<uint16_t>(inode_offset + TYPE) & REGULAR_FILE_TYPE);
 	if (not regular) {
-		return std::move(inode);
+		return inode;
 	}
 	inode.file_size = this->get<uint32_t>(inode_offset + FILE_SIZE);
 	if (this->device.revision != EXT2_GOOD_OLD_REV) {
@@ -243,7 +245,7 @@ INode ExtFileStream::read_inode(size_t inode_offset) {
 	for (size_t i = 0; i < INode::FILE_BLOCKS_MAX; i++) {
 		inode.blocks[i] = this->get<uint32_t>(inode_offset + BLOCKS + i);
 	}
-	return std::move(inode);
+	return inode;
 }
 
 void ExtFileStream::inode_foreach(const INode &inode, uint32_t group_start_abs, const inode_blocks_callback_t &callback) {
