@@ -80,6 +80,7 @@ private:
 	DeviceInfo device;
 	
 	bool is_correct;
+	size_t offset;
 
 	static bool check_block(const Bitmap &blocks_bitmap, bool used, size_t block_n_group_relative);
 	

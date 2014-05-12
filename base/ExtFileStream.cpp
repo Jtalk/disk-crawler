@@ -91,7 +91,7 @@ static const std::unordered_set<uint32_t> VALID_REVISIONS = {
 };
 
 ExtFileStream::ExtFileStream(const std::string &device_name, streampos absolute_offset)
-	: FSFileStream(device_name), is_correct(true) {
+	: FSFileStream(device_name), is_correct(true), offset(0) {
 	this->init();
 
 	if (not this->device.correct) {
@@ -209,7 +209,7 @@ bool ExtFileStream::check_block(const ExtFileStream::Bitmap &blocks_bitmap, bool
 }
 
 bool ExtFileStream::add(const Bitmap &blocks_bitmap, bool used, size_t block_group_start, size_t block_n_group_relative) {
-	bool checked = ExtFileStream::check_block(blocks_bitmap, used, block_group_start, block_n_group_relative);
+	bool checked = check_block(blocks_bitmap, used, block_group_start, block_n_group_relative);
 	if (checked) {
 		this->blocks.push_back(block_group_start + block_n_group_relative);
 	}
@@ -305,7 +305,38 @@ bool ExtFileStream::triply_indirect(uint32_t blocks_group_start, uint32_t offset
 }
 
 FSFileStream::streampos ExtFileStream::read(Buffer &buffer, streampos size) {
-
+	buffer.reset(size);
+	
+	uint32_t block_n = this->offset / this->device.block_size;
+	uint32_t in_block_offset = this->offset % this->device.block_size;
+	
+	DEBUG_ASSERT(this->blocks.empty(), "No blocks in Ext file stream reader");
+	
+	if (block_n >= this->blocks.size()) {
+		return npos;
+	}
+	
+	size_t total_read = 0;
+	
+	do {
+		uint32_t block_start = this->blocks[block_n];
+		uint32_t read_start = block_start + in_block_offset;
+		uint16_t read_size = std::min(size, this->device.block_size + block_start - read_start);
+		
+		size_t bytes_read = fread(buffer.begin() + total_read, 1, read_size, this->stream);
+		
+		total_read += bytes_read;
+		
+		if (bytes_read != read_size) {
+			break;
+		}
+		
+		++block_n;
+	} while (size > total_read);
+	
+	this->offset += total_read;
+	buffer.shrink(total_read);
+	return total_read;
 }
 
 bool ExtFileStream::eof() const {
@@ -313,11 +344,12 @@ bool ExtFileStream::eof() const {
 }
 
 streampos ExtFileStream::tellg() const {
-
+	return this->offset;
 }
 
 void ExtFileStream::seekg(streampos offset) {
-
+	size_t total_size = this->blocks.size() * this->device.block_size;
+	this->offset = std::min(total_size, offset);
 }
 
 const ExtFileStream::DeviceInfo &ExtFileStream::info() const {
