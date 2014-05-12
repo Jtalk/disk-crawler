@@ -50,6 +50,7 @@ enum ExtOffsets : size_t {
 	REVISION = 76,
 	
 	FIRST_INODE = 84,
+	INODE_SIZE = 88
 };
 
 enum GroupDescriptorOffsets : size_t {
@@ -130,8 +131,10 @@ void ExtFileStream::init() {
 	
 	if (this->device.revision == EXT2_GOOD_OLD_REV) {
 		this->device.group_first_data_inode = REV_0_INODE_TABLE_RESERVED_ENTRIES_COUNT;
+		this->device.inode_size = REV_0_INODE_SIZE;
 	} else {
 		this->device.group_first_data_inode = this->superblock_get<uint32_t>(FIRST_INODE);
+		this->device.inode_size = this->superblock_get<uint16_t>(INODE_SIZE);
 	}
 }
 
@@ -146,7 +149,8 @@ void ExtFileStream::init_blocks(streampos absolute_offset) {
 	
 	BlockDescriptor desc = this->read_descriptor(offsets.block_group_n);
 	
-	Bitmap blocks_bitmap = this->read_group_bitmap(desc.blocks_bitmap);
+	size_t bitmap_abs_block = offsets.block_group_start + desc.blocks_bitmap;
+	Bitmap blocks_bitmap = this->read_group_bitmap(bitmap_abs_block);
 	
 	if (offsets.block_n_group_relative >= blocks_bitmap.size()) {
 		this->is_correct = false;
@@ -220,16 +224,16 @@ bool ExtFileStream::add(const Bitmap &blocks_bitmap, bool used, size_t block_gro
 }
 
 INode ExtFileStream::find_inode(const ExtFileStream::BlockDescriptor &desc, const ExtFileStream::BlockOffsets &offset) {
-	size_t inodes_table_start_abs = desc.inodes_table + offset.block_group_start;
-	for (size_t i = this->device.group_first_data_inode; i < this->device.inodes_per_group; i++) {
-		INode &&inode = this->read_inode(inodes_table_start_abs + (i * INODE_SIZE));
+	size_t inodes_table_start_abs = this->device.block_size * (desc.inodes_table + offset.block_group_start - this->device.first_data_block);
+	for (size_t i = this->device.group_first_data_inode - 1; i < this->device.inodes_per_group; i++) {
+		INode inode = this->read_inode(inodes_table_start_abs + (i * this->device.inode_size));
 		bool found = false;
 		this->inode_foreach(inode, offset.block_group_start, [&offset, &found] (size_t block_n_group_relative) {
 			found = block_n_group_relative == offset.block_n_group_relative;
 			return not found;
 		});
 		if (found) {
-			return std::move(inode);
+			return inode;
 		}
 	}
 	return INode();
@@ -237,7 +241,8 @@ INode ExtFileStream::find_inode(const ExtFileStream::BlockDescriptor &desc, cons
 
 INode ExtFileStream::read_inode(size_t inode_offset) {
 	INode inode;
-	bool regular = (this->get<uint16_t>(inode_offset + TYPE) & REGULAR_FILE_TYPE);
+	auto file_type = this->get<uint16_t>(inode_offset + TYPE);
+	bool regular = file_type & REGULAR_FILE_TYPE;
 	if (not regular) {
 		return inode;
 	}
@@ -313,7 +318,7 @@ FSFileStream::streampos ExtFileStream::read(Buffer &buffer, streampos size) {
 	uint32_t block_n = this->offset / this->device.block_size;
 	uint32_t in_block_offset = this->offset % this->device.block_size;
 	
-	DEBUG_ASSERT(this->blocks.empty(), "No blocks in Ext file stream reader offset %u", this->offset);
+	DEBUG_ASSERT(not this->blocks.empty(), "No blocks in Ext file stream reader offset %u", this->offset);
 	
 	if (block_n >= this->blocks.size()) {
 		return npos;
@@ -335,7 +340,7 @@ FSFileStream::streampos ExtFileStream::read(Buffer &buffer, streampos size) {
 		}
 		
 		++block_n;
-	} while (size > total_read);
+	} while (size > total_read and block_n < this->blocks.size());
 	
 	this->offset += total_read;
 	buffer.shrink(total_read);

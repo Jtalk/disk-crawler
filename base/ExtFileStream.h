@@ -36,7 +36,7 @@ class ExtFileStream : public FSFileStream {
 	static const uint8_t INODE_FILE_BLOCKS_TRIPLY_INDIRECT = 14;
 	static const uint32_t END_OF_BLOCKCHAIN = 0;
 	static const uint8_t REV_0_INODE_TABLE_RESERVED_ENTRIES_COUNT = 11;
-	static const uint8_t INODE_SIZE = 128;
+	static const uint8_t REV_0_INODE_SIZE = 128;
 
 	enum Revision {
 		EXT2_GOOD_OLD_REV = 0,
@@ -68,6 +68,7 @@ public:
 		uint32_t inodes_per_group;
 		
 		uint32_t group_first_data_inode;
+		uint16_t inode_size;
 		
 		Revision revision;
 
