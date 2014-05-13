@@ -49,13 +49,13 @@ bool dump(ByteReader &reader, const std::string &filename) {
 	reader.seekg(0);
 
 	Buffer buffer(BUFFER_SIZE);
-	auto read = reader.read(buffer, buffer.size());
+	auto read = reader.read(buffer, BUFFER_SIZE);
 
 	while (read > 0 and read != ByteReader::npos) {
 		const char *buffer_raw = reinterpret_cast<const char*>(buffer.cbegin());
 		file.write(buffer_raw, buffer.size());
 		buffer.clear();
-		read = reader.read(buffer, buffer.size());
+		read = reader.read(buffer, BUFFER_SIZE);
 	}
 
 	return true;
