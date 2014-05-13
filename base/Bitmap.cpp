@@ -47,7 +47,7 @@ void Bitmap::set(const Buffer &buffer, size_t bits_size) {
 
 bool Bitmap::test(size_t pos) const {
 	DEBUG_ASSERT(pos < this->size_in_bits, "Invalid position %u in Bitmap test, size is %u", pos, this->size_in_bits);
-	return this->storage[pos / 8] & 1 << 7 >> pos % 8;
+	return this->storage[pos / 8] & 1 << pos % 8;
 	
 }
 
