@@ -149,15 +149,14 @@ void ExtFileStream::init_blocks(streampos absolute_offset) {
 	
 	BlockDescriptor desc = this->read_descriptor(offsets.block_group_n);
 	
-	size_t bitmap_abs_block = offsets.block_group_start + desc.blocks_bitmap;
-	Bitmap blocks_bitmap = this->read_group_bitmap(bitmap_abs_block);
+	Bitmap blocks_bitmap = this->read_group_bitmap(desc.blocks_bitmap);
 	
 	if (offsets.block_n_group_relative >= blocks_bitmap.size()) {
 		this->is_correct = false;
 		return;
 	}
 	
-	if (blocks_bitmap.test(offsets.block_n_group_relative)) {
+	if (blocks_bitmap.test(offsets.block_n_group_relative + 1)) {
 		this->rebuild_existent(desc, blocks_bitmap, offsets);
 	} else {
 		this->rebuild_deleted(blocks_bitmap, offsets);
@@ -225,7 +224,7 @@ bool ExtFileStream::add(const Bitmap &blocks_bitmap, bool used, size_t block_gro
 }
 
 INode ExtFileStream::find_inode(const ExtFileStream::BlockDescriptor &desc, const ExtFileStream::BlockOffsets &offset) {
-	size_t inodes_table_start_abs = this->device.block_size * (desc.inodes_table + offset.block_group_start);
+	size_t inodes_table_start_abs = this->device.block_size * desc.inodes_table;
 	for (size_t i = this->device.group_first_data_inode - 1; i < this->device.inodes_per_group; i++) {
 		INode inode = this->read_inode(inodes_table_start_abs + (i * this->device.inode_size));
 		bool found = false;
