@@ -180,8 +180,9 @@ ExtFileStream::BlockDescriptor ExtFileStream::read_descriptor(size_t block_group
 
 Bitmap ExtFileStream::read_group_bitmap(size_t bitmap_start_block_n) {
 	size_t bytes_size = ceil(this->device.blocks_per_group / 8.f);
+	size_t start_offset = bitmap_start_block_n * this->device.block_size;
 	Buffer buffer(bytes_size);
-	fseek(this->stream, bitmap_start_block_n * this->device.block_size, SEEK_SET);
+	fseek(this->stream, start_offset, SEEK_SET);
 	auto read = fread(buffer.begin(), 1, bytes_size, this->stream);
 	buffer.shrink(read);
 	
@@ -212,7 +213,7 @@ void ExtFileStream::rebuild_existent(const ExtFileStream::BlockDescriptor &desc,
 
 bool ExtFileStream::check_block(const Bitmap &blocks_bitmap, bool used, size_t block_n_group_relative) {
 	bool fits_bitmap = blocks_bitmap.size() > block_n_group_relative;
-	return block_n_group_relative != END_OF_BLOCKCHAIN and fits_bitmap and blocks_bitmap.test(block_n_group_relative) == used;
+	return block_n_group_relative != END_OF_BLOCKCHAIN and fits_bitmap and blocks_bitmap.test(block_n_group_relative - 1) == used;
 }
 
 bool ExtFileStream::add(const Bitmap &blocks_bitmap, bool used, size_t block_group_start, size_t block_n_group_relative) {
@@ -282,9 +283,9 @@ void ExtFileStream::inode_foreach(const INode &inode, uint32_t group_start_n, co
 bool ExtFileStream::indirect(uint32_t blocks_group_start, uint32_t offset, const inode_blocks_callback_t &callback) {
 	size_t blocks_start = offset * this->device.block_size;
 	size_t blocks_end = blocks_start + this->device.block_size;
-	for (uint32_t block = blocks_start; block < blocks_end; block++) {
-		auto current_pointer = this->get<uint32_t>(blocks_group_start + block * sizeof(uint32_t));
-		if (block == END_OF_BLOCKCHAIN or not callback(current_pointer)) {
+	for (uint32_t block = blocks_start; block < blocks_end; block += sizeof(uint32_t)) {
+		auto current_pointer = this->get<uint32_t>(blocks_group_start + block);
+		if (current_pointer == END_OF_BLOCKCHAIN or not callback(current_pointer)) {
 			return false;
 		}
 	}
@@ -294,9 +295,9 @@ bool ExtFileStream::indirect(uint32_t blocks_group_start, uint32_t offset, const
 bool ExtFileStream::doubly_indirect(uint32_t blocks_group_start, uint32_t offset, const inode_blocks_callback_t &callback) {
 	size_t blocks_start = offset * this->device.block_size;
 	size_t blocks_end = blocks_start + this->device.block_size;
-	for (uint32_t block = blocks_start; block < blocks_end; block++) {
-		auto current_pointer = this->get<uint32_t>(blocks_group_start + block * sizeof(uint32_t));
-		if (block == END_OF_BLOCKCHAIN or not this->indirect(blocks_group_start, current_pointer, callback)) {
+	for (uint32_t block = blocks_start; block < blocks_end; block += sizeof(uint32_t)) {
+		auto current_pointer = this->get<uint32_t>(blocks_group_start + block);
+		if (current_pointer == END_OF_BLOCKCHAIN or not this->indirect(blocks_group_start, current_pointer, callback)) {
 			return false;
 		}
 	}
@@ -306,9 +307,9 @@ bool ExtFileStream::doubly_indirect(uint32_t blocks_group_start, uint32_t offset
 bool ExtFileStream::triply_indirect(uint32_t blocks_group_start, uint32_t offset, const inode_blocks_callback_t &callback) {
 	size_t blocks_start = offset * this->device.block_size;
 	size_t blocks_end = blocks_start + this->device.block_size;
-	for (uint32_t block = blocks_start; block < blocks_end; block++) {
-		auto current_pointer = this->get<uint32_t>(blocks_group_start + block * sizeof(uint32_t));
-		if (block == END_OF_BLOCKCHAIN or not this->doubly_indirect(blocks_group_start, current_pointer, callback)) {
+	for (uint32_t block = blocks_start; block < blocks_end; block += sizeof(uint32_t)) {
+		auto current_pointer = this->get<uint32_t>(blocks_group_start + block);
+		if (current_pointer == END_OF_BLOCKCHAIN or not this->doubly_indirect(blocks_group_start, current_pointer, callback)) {
 			return false;
 		}
 	}
