@@ -43,7 +43,7 @@ protected:
 	enum SignatureType {
 	        ZIP = 0,
 	        RAR,
-		PLAIN,
+//		PLAIN,
 
 	        MAX_SIGNATURE
 	};
