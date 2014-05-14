@@ -44,6 +44,7 @@ public:
 	Buffer() = delete;
 	
 	explicit Buffer(size_t count);
+	Buffer(Buffer &&other);
 	~Buffer();
 	
 	void shrink(size_t size) {

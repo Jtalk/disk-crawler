@@ -45,6 +45,13 @@ Buffer::Buffer(size_t count)
 	this->offset = 0;
 }
 
+Buffer::Buffer(Buffer && other): Buffer(1) {
+	std::swap(this->buffer, other.buffer);
+	std::swap(this->offset, other.offset);
+	std::swap(this->real_length, other.real_length);
+	std::swap(this->length, other.length);
+}
+
 Buffer::~Buffer() 
 {
 	free(this->buffer);
