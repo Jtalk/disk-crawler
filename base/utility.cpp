@@ -19,6 +19,10 @@
 #include "utility.h"
 
 #include "Log.h"
+#include "FSWalker.h"
+#include "SignatureWalker.h"
+#include "ExtFileStream.h"
+#include "FATFileStream.h"
 
 #include <locale>
 
@@ -82,6 +86,16 @@ void sanitize(Buffer &buffer) {
 	tmp.begin()[last] = 0;
 	tmp.shrink(last + 1);
 	buffer.exchange(tmp);
+}
+
+SignatureWalker *walker(const std::string &fs, std::string &device_name, size_t size, const progress_callback_t &callback) {
+	if (fs.substr(0, 3) == "ext") {
+		return new FSWalker<ExtFileStream>(device_name, size, callback);
+	}
+	if (fs == "vfat" or fs.substr(0, 3) == "fat") {
+		return new FSWalker<FATFileStream>(device_name, size, callback);
+	}
+	return nullptr;
 }
 
 }

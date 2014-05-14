@@ -50,6 +50,8 @@ static const int PAUSE_DURATIION_MSEC = 1;
 #define DEBUG_ASSERT(EXPR, FORMAT, ...) RELEASE_ASSERT(EXPR, FORMAT, __VA_ARGS__)
 #endif
 
+class SignatureWalker;
+
 namespace utility
 {
 
@@ -61,6 +63,7 @@ typedef std::function<void(int)> progress_callback_t;
 size_t str_find(const Buffer &string, const byte_array_t &substr);
 bool dump(ByteReader &reader, const std::string &filename);
 void sanitize(Buffer &buffer);
+SignatureWalker *walker(const std::string &fs, std::string &device_name, size_t size, const progress_callback_t &callback);
 
 template<typename Target>
 inline Target to(const byte_array_t &bytes)
