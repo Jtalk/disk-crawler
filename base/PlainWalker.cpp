@@ -23,7 +23,7 @@
 
 #include "utility.h"
 
-PlainWalker::PlainWalker(const std::string &device_name, size_t size, const progress_callback_t &callback):
+PlainWalker::PlainWalker(const std::string &device_name, size_t size, const utility::progress_callback_t &callback):
 	SignatureWalker(device_name, size, callback)
 {}
 
@@ -37,8 +37,11 @@ SignatureWalker::results_t PlainWalker::find(const byte_array_t &to_find) {
 	ByteReader::streampos offset = 0;
 	
 	while (not decoder->eof()) {
-		auto pos = utility::find(*decoder, to_find, offset);
+		auto pos = utility::find(*decoder, to_find, offset, this->device_size, this->progress_callback);
 		if (pos == PlainFileStream::npos) {
+			if (this->progress_callback) {
+				this->progress_callback(100);
+			}
 			break;
 		} else {
 			offsets.push_back(pos);

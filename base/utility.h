@@ -26,10 +26,13 @@
 
 #include <unistd.h>
 
+#include <functional>
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <limits>
 
+#include <cmath>
 #include <cstdlib>
 
 static const int PAUSE_DURATIION_MSEC = 1;
@@ -50,7 +53,10 @@ static const int PAUSE_DURATIION_MSEC = 1;
 namespace utility
 {
 
-static const size_t BUFFER_SIZE = 100000000;
+static const size_t BUFFER_SIZE = 10000;
+static const size_t MAX_DEVICE_SIZE = std::numeric_limits<size_t>::max();
+
+typedef std::function<void(int)> progress_callback_t;
 
 size_t str_find(const Buffer &string, const byte_array_t &substr);
 bool dump(ByteReader &reader, const std::string &filename);
@@ -63,10 +69,11 @@ inline Target to(const byte_array_t &bytes)
 }
 
 template<class Stream>
-size_t find(Stream &stream, const byte_array_t &to_find, typename Stream::streampos offset = 0)
+size_t find(Stream &stream, const byte_array_t &to_find, typename Stream::streampos offset = 0, size_t total_size = MAX_DEVICE_SIZE, const progress_callback_t &callback = progress_callback_t())
 {
-	if (!stream)
+	if (!stream) {
 		return Stream::npos;
+	}
 
 	long int buffers_overlap = to_find.size();
 
@@ -89,6 +96,11 @@ size_t find(Stream &stream, const byte_array_t &to_find, typename Stream::stream
 		
 		auto found_pos = str_find(buffer, to_find);
 
+		if (callback) {
+			callback(std::min<int>(99, floor(float(pos + BUFFER_SIZE) / total_size * 100)));
+			std::cout << pos << " " << total_size << std::endl;
+		}
+		
 		if (found_pos != Buffer::npos) {
 			return pos + found_pos;
 		}
