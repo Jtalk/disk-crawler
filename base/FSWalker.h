@@ -33,8 +33,8 @@ protected:
 	}
                 
 public:
-        FSWalker(const std::string &device_name):
-		SignatureWalker(device_name)
+        FSWalker(const std::string &device_name, size_t size = utility::MAX_DEVICE_SIZE, const utility::progress_callback_t &callback = utility::progress_callback_t()):
+		SignatureWalker(device_name, size, callback)
 	{}
 	
         virtual ~FSWalker()
