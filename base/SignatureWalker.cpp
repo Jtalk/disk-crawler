@@ -33,6 +33,8 @@
 
 const SignatureWalker::signatures_t SignatureWalker::signatures(SignatureWalker::make_signatures());
 
+static constexpr float STRETCH_PERCENT_FACTOR = 0.7;
+
 SignatureWalker::SignatureWalker(const std::string &device_name, size_t size, const utility::progress_callback_t &callback):
 	device_name(device_name), device_size(size), progress_callback(callback)
 {
@@ -67,7 +69,7 @@ SignatureWalker::possible_matches_t SignatureWalker::find_by_signatures() const
         possible_matches_t matches;
         
         static const size_t BUFFER_OVERLAP = std::max_element(signatures.cbegin(), signatures.cend(), length_comparator)->length();
-        static const size_t BUFFER_SIZE = 100000000;
+        static const size_t BUFFER_SIZE = 100000;
 	
         Buffer buffer(BUFFER_SIZE);
 
@@ -89,11 +91,22 @@ SignatureWalker::possible_matches_t SignatureWalker::find_by_signatures() const
 				}
 				
 				in_buffer_offset += found_pos;
+				
+				if (this->progress_callback) {
+					logger()->warning("Callback written, value %u", (pos + in_buffer_offset) * 100 * STRETCH_PERCENT_FACTOR / this->device_size);
+					this->progress_callback((pos + in_buffer_offset) * 100 * STRETCH_PERCENT_FACTOR / this->device_size);
+				}
+				
 				buffer.move_front(found_pos + signature.length(), buffer.size() - found_pos - signature.length());
 				matches.push_front({pos + in_buffer_offset, (SignatureType)signature_type});
 			} while (true);
 			
 			buffer.reset_offset();
+			
+			if (this->progress_callback) {
+				logger()->warning("Callback written, value %u", (pos + read_bytes) * 100 * STRETCH_PERCENT_FACTOR / this->device_size);
+				this->progress_callback((pos + read_bytes) * 100 * STRETCH_PERCENT_FACTOR / this->device_size);
+			}
                 }
                 
                 if (feof(this->device) || ferror(this->device))

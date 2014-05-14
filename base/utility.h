@@ -55,7 +55,7 @@ class SignatureWalker;
 namespace utility
 {
 
-static const size_t BUFFER_SIZE = 10000;
+static const size_t BUFFER_SIZE = 100000;
 static const size_t MAX_DEVICE_SIZE = std::numeric_limits<size_t>::max();
 
 typedef std::function<void(int)> progress_callback_t;
