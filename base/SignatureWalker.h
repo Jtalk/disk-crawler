@@ -22,11 +22,13 @@
 
 #include <unistd.h>
 
+#include <functional>
 #include <fstream>
 #include <list>
 #include <string>
 #include <vector>
 #include <utility>
+#include <limits>
 
 class BaseDecoder;
 class ByteReader;
@@ -35,9 +37,10 @@ class FSFileStream;
 class SignatureWalker {
 public:
 	typedef std::list<size_t> offsets_t;
-	typedef std::pair<ByteReader*, offsets_t> result_t;
+	typedef std::pair<ByteReader *, offsets_t> result_t;
 	typedef std::list<result_t> results_t;
-	typedef std::list<SignatureWalker*> walkers_t;
+	typedef std::list<SignatureWalker *> walkers_t;
+	typedef std::function<void(int)> progress_callback_t;
 
 protected:
 	enum SignatureType {
@@ -55,29 +58,32 @@ protected:
 
 	typedef std::list<PossibleMatch> possible_matches_t;
 	typedef std::vector<byte_array_t> signatures_t;
-	typedef FILE* device_t;
+	typedef FILE *device_t;
 
 	static const signatures_t signatures;
+	static const size_t MAX_SIZE = std::numeric_limits<size_t>::max();
 
 	device_t device;
 	const std::string device_name;
+	size_t device_size;
+	progress_callback_t progress_callback;
 
 	possible_matches_t find_by_signatures() const;
-	
+
 	virtual FSFileStream *traceback(size_t absolute_offset) const = 0;
 
 private:
 	SignatureWalker() = delete;
-	SignatureWalker(const SignatureWalker& other) = delete;
-	virtual SignatureWalker& operator=(const SignatureWalker& other) = delete;
+	SignatureWalker(const SignatureWalker &other) = delete;
+	virtual SignatureWalker &operator=(const SignatureWalker &other) = delete;
 
 	results_t find(FSFileStream *stream, SignatureType type, const byte_array_t &to_find);
-	BaseDecoder* decode(FSFileStream* stream, SignatureType signature);
+	BaseDecoder *decode(FSFileStream *stream, SignatureType signature);
 
 public:
 	static signatures_t make_signatures();
 
-	SignatureWalker(const std::string &device_name);
+	SignatureWalker(const std::string &device_name, size_t size = MAX_SIZE, const progress_callback_t &callback = progress_callback_t());
 	virtual ~SignatureWalker();
 
 	virtual results_t find(const byte_array_t &to_find);

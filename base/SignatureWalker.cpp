@@ -33,8 +33,8 @@
 
 const SignatureWalker::signatures_t SignatureWalker::signatures(SignatureWalker::make_signatures());
 
-SignatureWalker::SignatureWalker(const std::string &device_name):
-	device_name(device_name)
+SignatureWalker::SignatureWalker(const std::string &device_name, size_t size, const progress_callback_t &callback):
+	device_name(device_name), device_size(size), progress_callback(callback)
 {
 	this->device = fopen(this->device_name.c_str(), "rb");
 }

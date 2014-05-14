@@ -23,8 +23,8 @@
 
 #include "utility.h"
 
-PlainWalker::PlainWalker(const std::string &device_name):
-	SignatureWalker(device_name)
+PlainWalker::PlainWalker(const std::string &device_name, size_t size, const progress_callback_t &callback):
+	SignatureWalker(device_name, size, callback)
 {}
 
 SignatureWalker::results_t PlainWalker::find(const byte_array_t &to_find) {

@@ -22,7 +22,7 @@
 #include "SignatureWalker.h"
 
 struct PlainWalker : public SignatureWalker {
-	PlainWalker(const std::string &device_name);
+	PlainWalker(const std::string &device_name, size_t size = MAX_SIZE, const progress_callback_t &callback = progress_callback_t());
 
 	virtual results_t find(const byte_array_t& to_find) override;
 	
