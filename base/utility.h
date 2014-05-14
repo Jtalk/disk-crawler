@@ -98,7 +98,6 @@ size_t find(Stream &stream, const byte_array_t &to_find, typename Stream::stream
 
 		if (callback) {
 			callback(std::min<int>(99, floor(float(pos + BUFFER_SIZE) / total_size * 100)));
-			std::cout << pos << " " << total_size << std::endl;
 		}
 		
 		if (found_pos != Buffer::npos) {
