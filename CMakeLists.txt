@@ -18,14 +18,13 @@ set (CMAKE_OBJDUMP "/usr/bin/llvm-objdump")
 add_subdirectory(base)
 
 # Building libcrawl libarary
-add_library(crawl)
 
 find_package(LibArchive REQUIRED)
-target_link_libraries(crawl crawlerbase ${LibArchive_LIBRARIES})
 
 # Building final executable
 add_executable(crawler main.cpp)
-target_link_libraries(crawler crawl)
+link_directories( ./build/base )
+target_link_libraries(crawler crawlerbase  ${LibArchive_LIBRARIES})
 install(TARGETS crawler RUNTIME DESTINATION bin)
 
 # Enabling testing capabilities of CMake

@@ -43,4 +43,4 @@ set (CRAWLERBASE_HEADERS
   PlainWalker.h
 )
 
-add_library(crawlerbase  ${CRAWLERBASE_SOURCES} ${CRAWLERBASE_HEADERS})
+add_library(crawlerbase SHARED ${CRAWLERBASE_SOURCES} ${CRAWLERBASE_HEADERS})
