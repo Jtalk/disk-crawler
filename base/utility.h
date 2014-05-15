@@ -100,7 +100,7 @@ size_t find(Stream &stream, const byte_array_t &to_find, typename Stream::stream
 		auto found_pos = str_find(buffer, to_find);
 
 		if (callback) {
-			callback(std::min<int>(99, floor(float(pos + BUFFER_SIZE) / total_size * 100)));
+			callback(std::min<int>(99, (pos + BUFFER_SIZE) * 100 / total_size));
 		}
 		
 		if (found_pos != Buffer::npos) {

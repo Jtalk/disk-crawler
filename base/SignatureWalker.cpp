@@ -33,7 +33,7 @@
 
 const SignatureWalker::signatures_t SignatureWalker::signatures(SignatureWalker::make_signatures());
 
-static constexpr float STRETCH_PERCENT_FACTOR = 0.7;
+static constexpr float STRETCH_PERCENT_FACTOR = 0.95;
 
 SignatureWalker::SignatureWalker(const std::string &device_name, size_t size, const utility::progress_callback_t &callback):
 	device_name(device_name), device_size(size), progress_callback(callback)
@@ -52,7 +52,9 @@ SignatureWalker::signatures_t SignatureWalker::make_signatures()
 {
 	signatures_t new_signatures((size_t)MAX_SIGNATURE);
 
-	new_signatures[ZIP] = byte_array_t {0x50, 0x4B, 0x03, 0x04};
+	new_signatures[ZIP0] = byte_array_t {0x50, 0x4B, 0x03, 0x04};
+	new_signatures[ZIP1] = byte_array_t {0x50, 0x4B, 0x05, 0x06};
+	new_signatures[ZIP2] = byte_array_t {0x50, 0x4B, 0x07, 0x08};
 	new_signatures[RAR] = byte_array_t {0x52, 0x61, 0x72, 0x21, 0x1A, 0x07};
 	//new_signatures[PLAIN] = byte_array_t {0x2f, 0x2a, 0x0a, 0x20, 0x20, 0x20, 0x20, 0x44};
 
@@ -93,7 +95,6 @@ SignatureWalker::possible_matches_t SignatureWalker::find_by_signatures() const
 				in_buffer_offset += found_pos;
 				
 				if (this->progress_callback) {
-					logger()->warning("Callback written, value %u", (pos + in_buffer_offset) * 100 * STRETCH_PERCENT_FACTOR / this->device_size);
 					this->progress_callback((pos + in_buffer_offset) * 100 * STRETCH_PERCENT_FACTOR / this->device_size);
 				}
 				
@@ -104,7 +105,6 @@ SignatureWalker::possible_matches_t SignatureWalker::find_by_signatures() const
 			buffer.reset_offset();
 			
 			if (this->progress_callback) {
-				logger()->warning("Callback written, value %u", (pos + read_bytes) * 100 * STRETCH_PERCENT_FACTOR / this->device_size);
 				this->progress_callback((pos + read_bytes) * 100 * STRETCH_PERCENT_FACTOR / this->device_size);
 			}
                 }
@@ -125,7 +125,11 @@ BaseDecoder* SignatureWalker::decode(FSFileStream* stream, SignatureType signatu
 	BaseDecoder::stream_t to_decode(stream);
 
 	switch (signature) {
-	case ZIP:
+	case ZIP0:
+		return new ZipDecoder(to_decode);
+	case ZIP1:
+		return new ZipDecoder(to_decode);
+	case ZIP2:
 		return new ZipDecoder(to_decode);
 	case RAR:
 		return new ZipDecoder(to_decode);
@@ -141,16 +145,32 @@ BaseDecoder* SignatureWalker::decode(FSFileStream* stream, SignatureType signatu
 	return nullptr;
 }
 
+static void weighted_callback(const utility::progress_callback_t &callback, int raw_percents) {
+	int weighted = 100 * STRETCH_PERCENT_FACTOR + raw_percents * (1 - STRETCH_PERCENT_FACTOR);
+	return callback(weighted);
+}
+
 SignatureWalker::results_t SignatureWalker::find(FSFileStream *stream, SignatureType type, const byte_array_t &to_find)
 {
+	using std::bind;
+	using namespace std::placeholders;
+	
 	auto decoder = this->decode(stream, type);
+
+	logger()->debug("Parsing decoder for type %u", type);
 
 	results_t results;
 	BaseDecoder::streampos offset = 0;
 	bool has_match = false;
 	offsets_t *current_result = nullptr;
+	
+	utility::progress_callback_t weighted_callback_binded; 
+	if (this->progress_callback) {
+		weighted_callback_binded = bind(weighted_callback, this->progress_callback, _1);
+	}
+	
 	while(true) {
-		auto found = utility::find(*decoder, to_find, offset);
+		auto found = utility::find(*decoder, to_find, offset, this->device_size, weighted_callback_binded);
 
 		if (found == BaseDecoder::npos) {
 			break;
@@ -164,6 +184,8 @@ SignatureWalker::results_t SignatureWalker::find(FSFileStream *stream, Signature
 		current_result->push_back(found);
 		offset = (found + 1);
 		has_match = true;
+		
+		logger()->debug("Offset %u, found %u for signature walker stream finder", offset, found);
 	}
 	
 	if (!has_match) {

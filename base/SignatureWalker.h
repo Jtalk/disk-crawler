@@ -42,7 +42,9 @@ public:
 
 protected:
 	enum SignatureType {
-	        ZIP = 0,
+	        ZIP0 = 0,
+	        ZIP1,
+	        ZIP2,
 	        RAR,
 //		PLAIN,
 
