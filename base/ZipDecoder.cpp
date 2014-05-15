@@ -258,3 +258,7 @@ bool ZipDecoder::eof() const
 {
 	return this->is_eof and (not this->overlap.suitable(this->offset) or this->overlap.empty());
 }
+
+ZipDecoder::streampos ZipDecoder::start_offset() const {
+	return this->stream->start_offset();
+}

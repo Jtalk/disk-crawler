@@ -30,6 +30,7 @@ class FSFileStream : public ByteReader
         
 protected:
         FILE *stream;
+	streampos abs_offset;
         
         template<typename T>
         T get(streampos offset) const { 
@@ -42,8 +43,12 @@ protected:
         virtual bool correct() const = 0;
 	
 public:
-        FSFileStream(const std::string &device_name);
+        FSFileStream(const std::string &device_name, streampos absolute_offset);
         virtual ~FSFileStream();
         
         virtual bool operator !() const override final;
+	
+	virtual streampos start_offset() const override {
+		return this->abs_offset;
+	}
 };

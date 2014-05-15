@@ -24,11 +24,11 @@ class PlainFileStream : public FSFileStream {
 public:
 	PlainFileStream(const std::string& device_name);
 	
+	virtual ByteReader::streampos tellg() const override;
 	virtual void seekg(ByteReader::streampos offset) override;
 	virtual ByteReader::streampos read(Buffer& buffer, ByteReader::streampos size) override;
 	
 	virtual bool eof() const override;
-	virtual ByteReader::streampos tellg() const override;
 	
 protected:
 	virtual bool correct() const override;

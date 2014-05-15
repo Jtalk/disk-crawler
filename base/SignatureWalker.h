@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <unordered_map>
 
 class BaseDecoder;
 class ByteReader;
@@ -36,8 +37,7 @@ class FSFileStream;
 class SignatureWalker {
 public:	
 	typedef std::list<utility::SearchResult> offsets_t;
-	typedef std::pair<ByteReader *, offsets_t> result_t;
-	typedef std::list<result_t> results_t;
+	typedef std::unordered_map<ByteReader*, offsets_t, ByteReader::offset_hash, ByteReader::offset_eq> results_t;
 	typedef std::list<SignatureWalker *> walkers_t;
 
 protected:
@@ -81,6 +81,7 @@ private:
 
 public:
 	static signatures_t make_signatures();
+	static void merge(results_t &into, results_t &from);
 
 	SignatureWalker(const std::string &device_name, size_t size = utility::MAX_DEVICE_SIZE, const utility::progress_callback_t &callback = utility::progress_callback_t());
 	virtual ~SignatureWalker();

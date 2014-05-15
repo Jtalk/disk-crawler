@@ -61,6 +61,13 @@ SignatureWalker::signatures_t SignatureWalker::make_signatures()
 	return new_signatures;
 }
 
+void SignatureWalker::merge(results_t &into, results_t &from) {
+	for (auto &pair : from) {
+		auto inserted = into.insert({pair.first, {}}).first;
+		inserted->second.splice(inserted->second.end(), pair.second);
+	}
+}
+
 static bool length_comparator(const byte_array_t &a, const byte_array_t &b)
 {
         return a.length() < b.length();
@@ -177,8 +184,11 @@ SignatureWalker::results_t SignatureWalker::find(FSFileStream *stream, Signature
 		}
 		
 		if (current_result == nullptr) {
-			auto iter = results.emplace(results.end(), decoder, offsets_t());
-			current_result = &iter->second;
+			auto inserted = results.insert({decoder, offsets_t()});
+			if (not inserted.second) {
+				break;
+			}
+			current_result = &inserted.first->second;
 		}
 		
 		current_result->push_back(found);
@@ -214,9 +224,13 @@ SignatureWalker::results_t SignatureWalker::find(const search_terms_t& to_find)
 			continue;
 		}
 
+		if (found.count(file_stream)) {
+			continue;
+		}
+		
 		auto found_by_signature = this->find(file_stream, match.signature, to_find);
 		logger()->debug("Found %u items by signature %u", found_by_signature.size(), match.signature);
-		found.splice(found.end(), found_by_signature);
+		merge(found, found_by_signature);
 	}
 
 	return found;

@@ -103,7 +103,7 @@ Status walk(const string &filename, const search_terms_t &to_find, SignatureWalk
 	for (auto walker : walkers) {
 		auto && found = walker->find(to_find);
 		if (not found.empty()) {
-			results.splice(results.end(), found);
+			SignatureWalker::merge(results, found);
 		} else {
 			delete walker;
 		}

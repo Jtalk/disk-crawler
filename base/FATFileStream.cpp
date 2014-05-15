@@ -44,7 +44,7 @@ enum FATDirectoryOffsets : size_t {
 static const uint32_t FAT_SERVICE_ENTRIES_COUNT = 2;
 
 FATFileStream::FATFileStream(const std::string &device_name, streampos absolute_offset)
-	: FSFileStream(device_name), is_correct(true), is_eof(false)
+	: FSFileStream(device_name, absolute_offset), is_correct(true), is_eof(false)
 {
 	this->init();
 

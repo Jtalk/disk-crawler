@@ -21,7 +21,7 @@
 #include <cstdio>
 
 PlainFileStream::PlainFileStream(const std::string& device_name):
-	FSFileStream(device_name)
+	FSFileStream(device_name, 0)
 {}
 
 bool PlainFileStream::correct() const {

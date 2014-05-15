@@ -91,7 +91,7 @@ static const std::unordered_set<uint16_t> VALID_ERRORS = {
 };
 
 ExtFileStream::ExtFileStream(const std::string &device_name, streampos absolute_offset)
-	: FSFileStream(device_name), is_correct(true), offset(0) {
+	: FSFileStream(device_name, absolute_offset), is_correct(true), offset(0) {
 	this->init();
 
 	if (not this->device.correct) {
@@ -103,6 +103,8 @@ ExtFileStream::ExtFileStream(const std::string &device_name, streampos absolute_
 	if (not this->correct()) {
 		return;
 	}
+	
+	this->abs_offset = this->blocks.front() * this->device.block_size;
 }
 
 void ExtFileStream::init() {

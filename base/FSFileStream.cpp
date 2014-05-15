@@ -18,7 +18,7 @@
 
 #include "FSFileStream.h"
 
-FSFileStream::FSFileStream(const std::string &device_name)
+FSFileStream::FSFileStream(const std::string &device_name, streampos absolute_offset): abs_offset(absolute_offset)
 {
 	this->stream = fopen(device_name.c_str(), "rb");
 }

@@ -31,9 +31,9 @@ SignatureWalker::results_t PlainWalker::find(const search_terms_t &to_find) {
 	auto decoder = new PlainFileStream(this->device_name);
 	
 	results_t results;
-	results.push_back({decoder, {}});
+	results.insert({decoder, {}});
 	
-	auto &offsets = results.front().second;
+	auto &offsets = results.begin()->second;
 	ByteReader::streampos offset = 0;
 	
 	while (not decoder->eof()) {

@@ -74,4 +74,6 @@ public:
 	virtual streampos tellg() const override;
 	
 	virtual bool eof() const override;
+	
+	virtual streampos start_offset() const override;
 };

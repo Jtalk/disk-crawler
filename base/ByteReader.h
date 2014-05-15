@@ -19,6 +19,7 @@
 #pragma once
 
 #include "Buffer.h"
+#include "Log.h"
 
 #include <cinttypes>
 #include <cstddef>
@@ -46,4 +47,21 @@ public:
 	virtual void reset() {
 		this->seekg(0);
 	}
+	
+	virtual streampos start_offset() const {
+		logger()->error("Start offset is got from base class while must be implemented in derived");
+		return 0;
+	}
+	
+	struct offset_hash {
+		size_t operator () (const ByteReader *reader) const {
+			return std::hash<streampos>()(reader->start_offset());
+		}
+	};
+	
+	struct offset_eq {
+		bool operator () (const ByteReader *fst, const ByteReader *snd) const {
+			return fst->start_offset() == snd->start_offset();
+		}
+	};
 };
