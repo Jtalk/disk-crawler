@@ -39,3 +39,6 @@ INode::~INode() {
 	free(this->blocks);
 }
 
+bool INode::valid() const {
+	return this->blocks != nullptr;
+}

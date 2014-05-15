@@ -30,6 +30,8 @@ struct INode {
 	INode(INode &&other);
 	~INode();
 	
+	bool valid() const;
+	
 private:
 	INode(const INode &other) = delete;
 	INode &operator=(const INode &other) = delete;

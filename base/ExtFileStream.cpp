@@ -205,6 +205,10 @@ void ExtFileStream::rebuild_deleted(const Bitmap &blocks_bitmap, const ExtFileSt
 void ExtFileStream::rebuild_existent(const ExtFileStream::BlockDescriptor &desc, const Bitmap &blocks_bitmap, const ExtFileStream::BlockOffsets &offset) {
 	// TODO: Inodes cache powered by Bloom filters
 	INode inode = this->find_inode(desc, offset);
+	if (not inode.valid()) {
+		this->is_correct = false;
+		return;
+	}
 	this->inode_foreach(inode, offset.block_group_start, [this, &blocks_bitmap, &offset] (size_t block_n_group_relative) {
 		return this->add(blocks_bitmap, true, offset.block_group_start, block_n_group_relative);
 	});
@@ -227,12 +231,7 @@ INode ExtFileStream::find_inode(const ExtFileStream::BlockDescriptor &desc, cons
 	size_t inodes_table_start_abs = this->device.block_size * desc.inodes_table;
 	for (size_t i = this->device.group_first_data_inode - 1; i < this->device.inodes_per_group; i++) {
 		INode inode = this->read_inode(inodes_table_start_abs + (i * this->device.inode_size));
-		bool found = false;
-		this->inode_foreach(inode, offset.block_group_start, [&offset, &found] (size_t block_n_group_relative) {
-			found = block_n_group_relative == offset.block_n_group_relative;
-			return not found;
-		});
-		if (found) {
+		if (inode.blocks[0] == offset.block_n_group_relative) {
 			return inode;
 		}
 	}
