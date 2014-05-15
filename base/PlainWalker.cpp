@@ -27,7 +27,7 @@ PlainWalker::PlainWalker(const std::string &device_name, size_t size, const util
 	SignatureWalker(device_name, size, callback)
 {}
 
-SignatureWalker::results_t PlainWalker::find(const byte_array_t &to_find) {
+SignatureWalker::results_t PlainWalker::find(const search_terms_t &to_find) {
 	auto decoder = new PlainFileStream(this->device_name);
 	
 	results_t results;
@@ -38,15 +38,16 @@ SignatureWalker::results_t PlainWalker::find(const byte_array_t &to_find) {
 	
 	while (not decoder->eof()) {
 		auto pos = utility::find(*decoder, to_find, offset, this->device_size, this->progress_callback);
-		if (pos == PlainFileStream::npos) {
-			if (this->progress_callback) {
-				this->progress_callback(100);
-			}
+		if (pos.offset == PlainFileStream::npos) {
 			break;
 		} else {
 			offsets.push_back(pos);
-			offset = pos + 1;
+			offset = pos.offset + 1;
 		} 
+	}
+	
+	if (this->progress_callback) {
+		this->progress_callback(100);
 	}
 	
 	if (offsets.empty()) {

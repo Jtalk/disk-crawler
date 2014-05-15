@@ -26,7 +26,7 @@
 struct PlainWalker : public SignatureWalker {
 	PlainWalker(const std::string &device_name, size_t size = utility::MAX_DEVICE_SIZE, const utility::progress_callback_t &callback = utility::progress_callback_t());
 
-	virtual results_t find(const byte_array_t& to_find) override;
+	virtual results_t find(const search_terms_t& to_find) override;
 	
 private:	
 	virtual FSFileStream* traceback(size_t) const override

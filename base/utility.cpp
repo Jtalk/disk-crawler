@@ -98,4 +98,64 @@ SignatureWalker *walker(const std::string &fs, std::string &device_name, size_t 
 	return nullptr;
 }
 
+size_t overlap_size(const search_terms_t &to_find) {
+	size_t size = 0;
+	for (const auto &term : to_find) {
+		size = std::max(size, term.size());
+	}
+	return size;
+}
+
+SearchResult find(ByteReader &stream, const search_terms_t &to_find, typename ByteReader::streampos offset, size_t total_size, const progress_callback_t &callback)
+{
+	if (!stream) {
+		return {-1, ByteReader::npos};
+	}
+
+	long int buffers_overlap = overlap_size(to_find);
+
+	Buffer buffer(BUFFER_SIZE);
+	stream.seekg(offset);
+	
+	DEBUG_ASSERT(offset == stream.tellg(), "Unable to set stream offset %u in utility::find", offset);
+
+	while (!stream.eof() && stream.tellg() != ByteReader::npos) {
+		auto pos = stream.tellg();
+
+		buffer.reset();
+		auto read = stream.read(buffer, BUFFER_SIZE);
+
+		if (read == ByteReader::npos) {
+			return {-1, ByteReader::npos};
+		}
+
+		buffer.shrink(read);
+		
+		int64_t pattern_n = 0;
+		for (const auto &pattern : to_find) {
+			auto found_pos = str_find(buffer, pattern);
+
+			if (found_pos != Buffer::npos) {
+				return {pattern_n, pos + found_pos};
+			}
+			
+			++pattern_n;
+		}
+
+		if (callback) {
+			callback(std::min<int>(99, (pos + BUFFER_SIZE) * 100 / total_size));
+		}
+		
+		if (stream.eof()) {
+			break;
+		}
+
+		stream.seekg(stream.tellg() - buffers_overlap);
+
+		usleep(PAUSE_DURATIION_MSEC);
+	}
+
+	return {-1, ByteReader::npos};
+}
+
 }

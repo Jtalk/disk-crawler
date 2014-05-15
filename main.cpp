@@ -46,18 +46,18 @@ enum Status {
         NOT_ENOUGH_ARGUMENTS = -3,
 };
 
-void output(const SignatureWalker::results_t &results, size_t chunk_size) {
+void output(const SignatureWalker::results_t &results, const search_terms_t &to_find, size_t chunk_size) {
 	for (auto & result : results) {
 
 		auto &reader = result.first;
 		uint32_t counter = 0;
 
-		for (auto found_pos : result.second) {
+		for (auto found : result.second) {
 			reader->reset();
 
 			size_t pos;
-			if (found_pos > POSITION_OFFSET) {
-				pos = found_pos - POSITION_OFFSET;
+			if (found.offset > POSITION_OFFSET) {
+				pos = found.offset - POSITION_OFFSET;
 			} else {
 				pos = 0;
 			}
@@ -77,7 +77,7 @@ void output(const SignatureWalker::results_t &results, size_t chunk_size) {
 			               "========================= Found: =========================\n"
 			               "%s\n"
 			               "==========================================================\n"
-			               "Position: %u", (char*)buffer.begin(), pos);
+			               "Position: %u, signature %s", (char*)buffer.begin(), found.offset, (char*)to_find[found.pattern_n].c_str());
 
 			++counter;
 		}
@@ -86,7 +86,7 @@ void output(const SignatureWalker::results_t &results, size_t chunk_size) {
 	}
 }
 
-Status walk(const string &filename, const byte_array_t &to_find, SignatureWalker::results_t &results) {
+Status walk(const string &filename, const search_terms_t &to_find, SignatureWalker::results_t &results) {
 	SignatureWalker::walkers_t walkers;
 
 	auto plain = new PlainWalker(filename);
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
 
 	logger()->debug("Found %u matched documents!", found.size());
 
-	output(found, opts.to_find.length());
+	output(found, opts.to_find, utility::overlap_size(opts.to_find));
 
 	for (auto & result : found)
 		delete result.first;

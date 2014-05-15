@@ -150,7 +150,7 @@ static void weighted_callback(const utility::progress_callback_t &callback, int 
 	return callback(weighted);
 }
 
-SignatureWalker::results_t SignatureWalker::find(FSFileStream *stream, SignatureType type, const byte_array_t &to_find)
+SignatureWalker::results_t SignatureWalker::find(FSFileStream *stream, SignatureType type, const search_terms_t &to_find)
 {
 	using std::bind;
 	using namespace std::placeholders;
@@ -170,9 +170,9 @@ SignatureWalker::results_t SignatureWalker::find(FSFileStream *stream, Signature
 	}
 	
 	while(true) {
-		auto found = utility::find(*decoder, to_find, offset, this->device_size, weighted_callback_binded);
+		utility::SearchResult found = utility::find(*decoder, to_find, offset, this->device_size, weighted_callback_binded);
 
-		if (found == BaseDecoder::npos) {
+		if (found.pattern_n == -1) {
 			break;
 		}
 		
@@ -182,10 +182,8 @@ SignatureWalker::results_t SignatureWalker::find(FSFileStream *stream, Signature
 		}
 		
 		current_result->push_back(found);
-		offset = (found + 1);
+		offset = (found.offset + 1);
 		has_match = true;
-		
-		logger()->debug("Offset %u, found %u for signature walker stream finder", offset, found);
 	}
 	
 	if (!has_match) {
@@ -195,7 +193,7 @@ SignatureWalker::results_t SignatureWalker::find(FSFileStream *stream, Signature
 	return std::move(results);
 }
 
-SignatureWalker::results_t SignatureWalker::find(const byte_array_t& to_find)
+SignatureWalker::results_t SignatureWalker::find(const search_terms_t& to_find)
 {
 	auto signature_matches = this->find_by_signatures();
 

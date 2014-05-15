@@ -27,15 +27,17 @@ Options cmdopts(int argc, const char **argv) {
 	
 	Options options;
 	options.filename = argv[1];
-	options.to_find = byte_array_t((uint8_t*)argv[2], strlen(argv[2]));
+	options.to_find.reserve(argc);
 	
-	for (int32_t i = 3; i < argc; i++) {
+	for (int32_t i = 2; i < argc; i++) {
 		string value(argv[i]);
 		
 		if (value == "-v" or value == "--verbose") {
 			config()->VERBOSE = true;
 			continue;
 		}
+		
+		options.to_find.push_back(byte_array_t((uint8_t*)argv[i], strlen(argv[i])));
 	}
 	
 	return options;

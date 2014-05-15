@@ -64,6 +64,7 @@ size_t str_find(const Buffer &string, const byte_array_t &substr);
 bool dump(ByteReader &reader, const std::string &filename);
 void sanitize(Buffer &buffer);
 SignatureWalker *walker(const std::string &fs, std::string &device_name, size_t size, const progress_callback_t &callback);
+size_t overlap_size(const search_terms_t &to_find);
 
 template<typename Target>
 inline Target to(const byte_array_t &bytes)
@@ -71,52 +72,13 @@ inline Target to(const byte_array_t &bytes)
 	return *reinterpret_cast<const Target*>(&bytes[0]);
 }
 
-template<class Stream>
-size_t find(Stream &stream, const byte_array_t &to_find, typename Stream::streampos offset = 0, size_t total_size = MAX_DEVICE_SIZE, const progress_callback_t &callback = progress_callback_t())
-{
-	if (!stream) {
-		return Stream::npos;
-	}
+struct SearchResult {
+	int64_t pattern_n;
+	ByteReader::streampos offset;
+};
 
-	long int buffers_overlap = to_find.size();
-
-	Buffer buffer(BUFFER_SIZE);
-	stream.seekg(offset);
-	
-	DEBUG_ASSERT(offset == stream.tellg(), "Unable to set stream offset %u in utility::find", offset);
-
-	while (!stream.eof() && stream.tellg() != Stream::npos) {
-		auto pos = stream.tellg();
-
-		buffer.reset();
-		auto read = stream.read(buffer, BUFFER_SIZE);
-
-		if (read == Stream::npos) {
-			return Stream::npos;
-		}
-
-		buffer.shrink(read);
-		
-		auto found_pos = str_find(buffer, to_find);
-
-		if (callback) {
-			callback(std::min<int>(99, (pos + BUFFER_SIZE) * 100 / total_size));
-		}
-		
-		if (found_pos != Buffer::npos) {
-			return pos + found_pos;
-		}
-
-		if (stream.eof()) {
-			break;
-		}
-
-		stream.seekg(stream.tellg() - buffers_overlap);
-
-		usleep(PAUSE_DURATIION_MSEC);
-	}
-
-	return Stream::npos;
-}
-
+SearchResult find(ByteReader &stream, const search_terms_t &to_find, 
+		  typename ByteReader::streampos offset = 0, 
+		  size_t total_size = MAX_DEVICE_SIZE, 
+		  const progress_callback_t &callback = progress_callback_t());
 }

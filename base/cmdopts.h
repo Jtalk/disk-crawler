@@ -24,7 +24,7 @@
 
 struct Options {	
 	std::string filename;
-	byte_array_t to_find;
+	search_terms_t to_find;
 };
 
 Options cmdopts(int argc, const char **argv);

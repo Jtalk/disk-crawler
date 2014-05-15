@@ -34,8 +34,8 @@ class ByteReader;
 class FSFileStream;
 
 class SignatureWalker {
-public:
-	typedef std::list<size_t> offsets_t;
+public:	
+	typedef std::list<utility::SearchResult> offsets_t;
 	typedef std::pair<ByteReader *, offsets_t> result_t;
 	typedef std::list<result_t> results_t;
 	typedef std::list<SignatureWalker *> walkers_t;
@@ -76,7 +76,7 @@ private:
 	SignatureWalker(const SignatureWalker &other) = delete;
 	virtual SignatureWalker &operator=(const SignatureWalker &other) = delete;
 
-	results_t find(FSFileStream *stream, SignatureType type, const byte_array_t &to_find);
+	results_t find(FSFileStream *stream, SignatureType type, const search_terms_t &to_find);
 	BaseDecoder *decode(FSFileStream *stream, SignatureType signature);
 
 public:
@@ -85,7 +85,7 @@ public:
 	SignatureWalker(const std::string &device_name, size_t size = utility::MAX_DEVICE_SIZE, const utility::progress_callback_t &callback = utility::progress_callback_t());
 	virtual ~SignatureWalker();
 
-	virtual results_t find(const byte_array_t &to_find);
+	virtual results_t find(const search_terms_t &to_find);
 
 	bool operator !() const;
 };

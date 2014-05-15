@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <vector>
 #include <string>
 
 typedef std::basic_string<uint8_t> byte_array_t;
+typedef std::vector<byte_array_t> search_terms_t;
