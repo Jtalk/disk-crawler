@@ -34,26 +34,18 @@ SignatureWalker::results_t PlainWalker::find(const search_terms_t &to_find) {
 	results.insert({decoder, {}});
 	
 	auto &offsets = results.begin()->second;
-	ByteReader::streampos offset = 0;
 	
-	while (not decoder->eof()) {
-		auto pos = utility::find(*decoder, to_find, offset, this->device_size, this->progress_callback);
-		if (pos.offset == PlainFileStream::npos) {
-			break;
-		} else {
-			offsets.push_back(pos);
-			offset = pos.offset + 1;
-		} 
-	}
+	auto found = utility::find(*decoder, to_find, this->device_size, this->progress_callback);
+	if (not found.empty()) {
+		offsets.splice(offsets.end(), found);
+	} else {
+		delete decoder;
+		results.clear();
+	} 
 	
 	if (this->progress_callback) {
 		this->progress_callback(100);
 	}
-	
-	if (offsets.empty()) {
-		delete decoder;
-		results.clear();
-	} 
 	
 	return results;
 }

@@ -36,8 +36,7 @@ class FSFileStream;
 
 class SignatureWalker {
 public:	
-	typedef std::list<utility::SearchResult> offsets_t;
-	typedef std::unordered_map<ByteReader*, offsets_t, ByteReader::offset_hash, ByteReader::offset_eq> results_t;
+	typedef std::unordered_map<ByteReader*, utility::found_offsets_t, ByteReader::offset_hash, ByteReader::offset_eq> results_t;
 	typedef std::list<SignatureWalker *> walkers_t;
 
 protected:
@@ -76,7 +75,7 @@ private:
 	SignatureWalker(const SignatureWalker &other) = delete;
 	virtual SignatureWalker &operator=(const SignatureWalker &other) = delete;
 
-	results_t find(FSFileStream *stream, SignatureType type, const search_terms_t &to_find);
+	void find(results_t &results, FSFileStream *stream, SignatureType type, const search_terms_t &to_find);
 	BaseDecoder *decode(FSFileStream *stream, SignatureType signature);
 
 public:

@@ -106,56 +106,64 @@ size_t overlap_size(const search_terms_t &to_find) {
 	return size;
 }
 
-SearchResult find(ByteReader &stream, const search_terms_t &to_find, typename ByteReader::streampos offset, size_t total_size, const progress_callback_t &callback)
+found_offsets_t find(ByteReader &stream, const search_terms_t &to_find, size_t , const progress_callback_t &callback)
 {
 	if (!stream) {
-		return {-1, ByteReader::npos};
+		return {};
 	}
 
 	long int buffers_overlap = overlap_size(to_find);
 
 	Buffer buffer(BUFFER_SIZE);
-	stream.seekg(offset);
+	stream.seekg(0);
 	
-	DEBUG_ASSERT(offset == stream.tellg(), "Unable to set stream offset %u in utility::find", offset);
+	DEBUG_ASSERT(0 == stream.tellg(), "Unable to set stream offset %u in utility::find", 0);
 
+	found_offsets_t results;
 	while (!stream.eof() && stream.tellg() != ByteReader::npos) {
+		buffer.reset(BUFFER_SIZE);
 		auto pos = stream.tellg();
-
-		buffer.reset();
-		auto read = stream.read(buffer, BUFFER_SIZE);
-
-		if (read == ByteReader::npos) {
-			return {-1, ByteReader::npos};
-		}
-
-		buffer.shrink(read);
+		auto read_bytes = stream.read(buffer, BUFFER_SIZE);
+		buffer.shrink(read_bytes);
 		
 		int64_t pattern_n = 0;
 		for (const auto &pattern : to_find) {
-			auto found_pos = str_find(buffer, pattern);
-
-			if (found_pos != Buffer::npos) {
-				return {pattern_n, pos + found_pos};
-			}
+			size_t in_buffer_offset = 0;
+			do {
+				size_t found_pos = utility::str_find(buffer, pattern);
+				
+				if (found_pos == Buffer::npos) {
+					break;
+				}
+				
+				in_buffer_offset += found_pos;
+				
+				if (callback) {
+					callback((pos + in_buffer_offset) * 100 * 1);
+				}
+				
+				buffer.move_front(found_pos + pattern.length());
+				results.push_back({pattern_n, pos + in_buffer_offset});
+				in_buffer_offset += pattern.length();
+			} while (true);
 			
-			++pattern_n;
-		}
-
-		if (callback) {
-			callback(std::min<int>(99, (pos + BUFFER_SIZE) * 100 / total_size));
-		}
-		
-		if (stream.eof()) {
+			buffer.reset_offset();
+			
+			if (callback) {
+				callback((pos + read_bytes) * 100 * 1);
+			}
+                }
+                
+                if (stream.eof()) {
 			break;
-		}
+                }
 
 		stream.seekg(stream.tellg() - buffers_overlap);
 
 		usleep(PAUSE_DURATIION_MSEC);
 	}
 
-	return {-1, ByteReader::npos};
+	return results;
 }
 
 }

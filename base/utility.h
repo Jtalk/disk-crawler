@@ -31,6 +31,7 @@
 #include <iostream>
 #include <string>
 #include <limits>
+#include <list>
 
 #include <cmath>
 #include <cstdlib>
@@ -58,7 +59,13 @@ namespace utility
 static const size_t BUFFER_SIZE = 10000000;
 static const size_t MAX_DEVICE_SIZE = std::numeric_limits<size_t>::max();
 
+struct SearchResult {
+	int64_t pattern_n;
+	ByteReader::streampos offset;
+};
+
 typedef std::function<void(int)> progress_callback_t;
+typedef std::list<SearchResult> found_offsets_t;
 
 size_t str_find(const Buffer &string, const byte_array_t &substr);
 bool dump(ByteReader &reader, const std::string &filename);
@@ -72,13 +79,7 @@ inline Target to(const byte_array_t &bytes)
 	return *reinterpret_cast<const Target*>(&bytes[0]);
 }
 
-struct SearchResult {
-	int64_t pattern_n;
-	ByteReader::streampos offset;
-};
-
-SearchResult find(ByteReader &stream, const search_terms_t &to_find, 
-		  typename ByteReader::streampos offset = 0, 
+found_offsets_t find(ByteReader &stream, const search_terms_t &to_find, 
 		  size_t total_size = MAX_DEVICE_SIZE, 
 		  const progress_callback_t &callback = progress_callback_t());
 }
