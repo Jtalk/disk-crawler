@@ -60,7 +60,7 @@ struct rk_hash {
 	
 	size_t new_hash(Buffer::const_iterator first) const {
 		uint32_t hash = 0;
-		for (int32_t i = this->cache.size() - 1; i >= 0; i++) {
+		for (int32_t i = this->cache.size() - 1; i >= 0; i--) {
 			hash = (hash + *(first++) * this->cache[i]) % RK_MODULUS;
 		}
 		return hash;

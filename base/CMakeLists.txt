@@ -5,6 +5,7 @@ set (CRAWLERBASE_SOURCES
   Config.cpp
   Log.cpp
   utility.cpp
+  utility_rabin_karp.cpp
   Bitmap.cpp
   Buffer.cpp
   OverlapBuffer.cpp 

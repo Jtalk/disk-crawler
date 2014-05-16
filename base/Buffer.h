@@ -83,6 +83,14 @@ public:
 		return this->begin() + this->length;
 	}
 	
+	uint8_t &operator [] (size_t offset) {
+		return this->begin()[offset];
+	}
+	
+	const uint8_t &operator [] (size_t offset) const {
+		return this->cbegin()[offset];
+	}
+	
 	const_iterator cbegin() const {
 		return this->buffer + this->offset;
 	}

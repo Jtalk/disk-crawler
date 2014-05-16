@@ -24,20 +24,18 @@
 #include "ExtFileStream.h"
 #include "FATFileStream.h"
 
+#include <algorithm>
+#include <unordered_map>
 #include <locale>
 
 namespace utility {
 
-size_t str_find(const Buffer &string, const byte_array_t &substr) {
-	byte_array_t array(string.cbegin(), string.size());
-
-	// TODO: Bayer-Moore
-
-	auto result = array.find(substr);
-	if (result == byte_array_t::npos)
-		return Buffer::npos;
-	else
-		return result;
+SearchResult str_find(const Buffer &string, const search_terms_t &to_find) {
+	auto found = rabin_karp(string, to_find);
+	if (found.pattern_n == -1) {
+		return {-1, Buffer::npos};
+	}
+	return found;
 }
 
 bool dump(ByteReader &reader, const std::string &filename) {
@@ -131,15 +129,11 @@ SearchResult find(ByteReader &stream, const search_terms_t &to_find, typename By
 
 		buffer.shrink(read);
 		
-		int64_t pattern_n = 0;
-		for (const auto &pattern : to_find) {
-			auto found_pos = str_find(buffer, pattern);
+		auto found_pos = str_find(buffer, to_find);
 
-			if (found_pos != Buffer::npos) {
-				return {pattern_n, pos + found_pos};
-			}
-			
-			++pattern_n;
+		if (found_pos.offset != Buffer::npos) {
+			found_pos.offset += pos;
+			return found_pos;
 		}
 
 		if (callback) {
