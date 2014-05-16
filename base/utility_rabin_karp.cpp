@@ -72,6 +72,7 @@ struct rk_hash {
 			old_hash = old_hash += RK_MODULUS;
 		}
 		old_hash -= removing_value;
+		old_hash = old_hash * RK_COEFF % RK_MODULUS;
 		uint32_t adding_value = adding * this->cache[0] % RK_MODULUS;
 		old_hash = (old_hash + adding_value) % RK_MODULUS;
 		return old_hash;
@@ -83,7 +84,10 @@ namespace utility {
 SearchResult rabin_karp(const Buffer &string, const search_terms_t &to_find) {
 	size_t chunk_size = std::min_element(CONTAINER(to_find), rk_chunk_size_compare)->size();
 	
+	logger()->debug("RK chunk size is %u", chunk_size);
+	
 	if (string.size() < chunk_size) {
+		logger()->debug("String is too small: %u while chunk size is %u", string.size(), chunk_size);
 		return {-1, Buffer::npos};
 	}
 	
@@ -97,19 +101,25 @@ SearchResult rabin_karp(const Buffer &string, const search_terms_t &to_find) {
 	size_t i = 0;
 	for (auto &pattern : to_find) {
 		uint32_t hash = hasher.new_hash(pattern.data());
+		logger()->debug("Hash %u for string %u in patterns", hash, i);
 		patterns[hash].push_back(i++);
 	}
+	
+	logger()->debug("Collisions report: %u signatures, %u positions in table", to_find.size(), patterns.size());
 	
 	uint32_t hash = 0;
 	for (size_t current_pos = 0; string.cbegin() + current_pos < string.cend() - chunk_size + 1; current_pos++) {
 		iterators_t iters{string.cbegin() + current_pos, string.cbegin() + current_pos + chunk_size};
 		if (current_pos == 0) {
 			hash = hasher.new_hash(string.cbegin());
+			logger()->debug("Hash %u is being calculated", hash);
 		} else {
 			hash = hasher.reuse_hash(hash, *(iters.first - 1), *(iters.second - 1), chunk_size);
+			logger()->debug("Hash %u is being recalculated", hash);
 		}
 		auto found = patterns.find(hash);
 		if (found != patterns.cend()) {
+			logger()->debug("Hash %u matched", hash);
 			for (const auto &index : found->second) {
 				const auto &pattern = to_find[index];
 				size_t buffer_left = string.cend() - string.cbegin() - current_pos;
@@ -124,11 +134,13 @@ SearchResult rabin_karp(const Buffer &string, const search_terms_t &to_find) {
 					} 
 				}
 				if (matched) {
+					logger()->debug("Matched RK with index %d at pos %u", index, current_pos);
 					return {int64_t(index), current_pos};
 				}
 			}
 		}
 	}
+	logger()->debug("No matches at RK");
 	return {-1, Buffer::npos};
 }
 
