@@ -1,5 +1,5 @@
 
-add_executable(tests tests.cpp)
+add_executable(tests SearchTest.cpp tests.cpp)
 
 set(CMAKE_CXX_FLAGS "-DTEST ${CMAKE_CXX_FLAGS}")
 find_package(LibArchive REQUIRED)

@@ -75,6 +75,10 @@ struct BmHeuristics {
 struct SearchResult {
 	int64_t pattern_n;
 	ByteReader::streampos offset;
+	
+	bool operator == (const SearchResult &other) {
+		return pattern_n == other.pattern_n and offset == other.offset;
+	}
 };
 
 bool dump(ByteReader &reader, const std::string &filename);

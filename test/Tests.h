@@ -25,10 +25,12 @@ inline void run_tests()
 #else
 
 #include "BufferTest.h"
+#include "SearchTest.h"
 
 #include <cppunit/ui/text/TestRunner.h>
 
 CPPUNIT_TEST_SUITE_REGISTRATION(BufferTest);
+CPPUNIT_TEST_SUITE_REGISTRATION(SearchTest);
 
 inline void run_tests() 
 {
