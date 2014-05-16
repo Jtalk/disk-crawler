@@ -27,8 +27,6 @@
 
 #include "utility.h"
 
-#include <boost/algorithm/searching/boyer_moore.hpp>
-
 #include <algorithm>
 
 #include <cstdio>
@@ -94,21 +92,20 @@ SignatureWalker::possible_matches_t SignatureWalker::find_by_signatures() const
                 for (size_t signature_type = 0; signature_type < MAX_SIGNATURE; signature_type++) {
 			const auto &signature = signatures[signature_type];
 			size_t in_buffer_offset = 0;
-			boost::algorithm::boyer_moore bm_search(signature.cbegin(), signature.cend());
 			do {
-				auto found_it = bm_search(buffer.cbegin(), buffer.cend());
+				size_t found_pos = utility::str_find(buffer, signature);
 				
-				if (found_it == buffer.cend()) {
+				if (found_pos == Buffer::npos) {
 					break;
 				}
 				
-				in_buffer_offset += *found_it;
+				in_buffer_offset += found_pos;
 				
 				if (this->progress_callback) {
 					this->progress_callback((pos + in_buffer_offset) * 100 * STRETCH_PERCENT_FACTOR / this->device_size);
 				}
 				
-				buffer.move_front(*found_it + signature.length(), buffer.size() - *found_it - signature.length());
+				buffer.move_front(found_pos + signature.length(), buffer.size() - found_pos - signature.length());
 				matches.push_front({pos + in_buffer_offset, (SignatureType)signature_type});
 			} while (true);
 			
