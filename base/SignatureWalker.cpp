@@ -78,7 +78,7 @@ SignatureWalker::possible_matches_t SignatureWalker::find_by_signatures() const
         possible_matches_t matches;
         
         static const size_t BUFFER_OVERLAP = std::max_element(signatures.cbegin(), signatures.cend(), length_comparator)->length();
-        static const size_t BUFFER_SIZE = 100000;
+        static const size_t BUFFER_SIZE = 10000000;
 	
         Buffer buffer(BUFFER_SIZE);
 
