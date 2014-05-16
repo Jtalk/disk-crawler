@@ -112,10 +112,8 @@ SearchResult rabin_karp(const Buffer &string, const search_terms_t &to_find) {
 		iterators_t iters{string.cbegin() + current_pos, string.cbegin() + current_pos + chunk_size};
 		if (current_pos == 0) {
 			hash = hasher.new_hash(string.cbegin());
-			logger()->debug("Hash %u is being calculated", hash);
 		} else {
 			hash = hasher.reuse_hash(hash, *(iters.first - 1), *(iters.second - 1), chunk_size);
-			logger()->debug("Hash %u is being recalculated", hash);
 		}
 		auto found = patterns.find(hash);
 		if (found != patterns.cend()) {
