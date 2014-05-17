@@ -157,50 +157,44 @@ static void weighted_callback(const utility::progress_callback_t &callback, int 
 	return callback(weighted);
 }
 
-SignatureWalker::results_t SignatureWalker::find(FSFileStream *stream, SignatureType type, const search_terms_t &to_find)
+void SignatureWalker::find(SignatureWalker::results_t &results, FSFileStream *stream, SignatureType type, const search_terms_t &to_find)
 {
 	using std::bind;
 	using namespace std::placeholders;
 	
 	auto decoder = this->decode(stream, type);
+	
+	if (decoder == nullptr) {
+		return;
+	}
 
 	logger()->debug("Parsing decoder for type %u", type);
-
-	results_t results;
-	BaseDecoder::streampos offset = 0;
-	bool has_match = false;
-	offsets_t *current_result = nullptr;
 	
 	utility::progress_callback_t weighted_callback_binded; 
 	if (this->progress_callback) {
 		weighted_callback_binded = bind(weighted_callback, this->progress_callback, _1);
 	}
 	
-	while(true) {
-		utility::SearchResult found = utility::find(*decoder, to_find, offset, this->device_size, weighted_callback_binded);
-
-		if (found.pattern_n == -1) {
-			break;
-		}
-		
-		if (current_result == nullptr) {
-			auto inserted = results.insert({decoder, offsets_t()});
-			if (not inserted.second) {
-				break;
-			}
-			current_result = &inserted.first->second;
-		}
-		
-		current_result->push_back(found);
-		offset = (found.offset + 1);
-		has_match = true;
+	auto inserted = results.insert({decoder, {}});
+	if (not inserted.second) {
+		logger()->debug("Duplicate decoder!");
+		delete decoder;
+		return;
 	}
 	
-	if (!has_match) {
+	auto &current_result = inserted.first->second;
+	
+	utility::found_offsets_t found = utility::find(*decoder, to_find, this->device_size, weighted_callback_binded);
+
+	if (not found.empty()) {
+		logger()->debug("Found something!");
+		current_result.splice(current_result.end(), found);
+	} else {
+		results.erase(inserted.first);
 		delete decoder;
 	}
 
-	return std::move(results);
+	return;
 }
 
 SignatureWalker::results_t SignatureWalker::find(const search_terms_t& to_find)
@@ -228,9 +222,7 @@ SignatureWalker::results_t SignatureWalker::find(const search_terms_t& to_find)
 			continue;
 		}
 		
-		auto found_by_signature = this->find(file_stream, match.signature, to_find);
-		logger()->debug("Found %u items by signature %u", found_by_signature.size(), match.signature);
-		merge(found, found_by_signature);
+		this->find(found, file_stream, match.signature, to_find);
 	}
 
 	return found;
