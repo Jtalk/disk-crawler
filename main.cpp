@@ -39,6 +39,7 @@ OPTIONS:\n\
 	\t\tExample: --encodings='utf8,cp1251'\n\
 ";
 static const size_t POSITION_OFFSET = 10;
+static const char ENCODING_MISMATCH[] = ">>>Preview disabled because of encoding mismatch<<<";
 
 using namespace std;
 
@@ -74,7 +75,12 @@ void output(const SignatureWalker::results_t &results, const search_terms_t &to_
 			buffer.resize(buffer.size() + 1);
 			buffer.begin()[read] = 0;
 			
-			utility::sanitize(buffer);
+			if (to_find[found.pattern_n].encoding == to_find.crbegin()->encoding) {
+				utility::sanitize(buffer);
+			} else {
+				buffer.clear();
+				buffer.capture((uint8_t*)ENCODING_MISMATCH, sizeof(ENCODING_MISMATCH));
+			}
 
 			logger()->info("\n"
 			               "========================= Found: =========================\n"
