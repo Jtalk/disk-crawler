@@ -18,8 +18,16 @@
 
 #pragma once
 
+#include <deque>
 #include <vector>
 #include <string>
 
 typedef std::basic_string<uint8_t> byte_array_t;
 typedef std::vector<byte_array_t> search_terms_t;
+
+typedef std::deque<std::string> encodings_t;
+struct Options {	
+	std::string filename;
+	search_terms_t to_find;
+	encodings_t encodings;
+};

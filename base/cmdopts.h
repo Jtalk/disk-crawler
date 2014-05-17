@@ -20,11 +20,4 @@
 
 #include "types.h"
 
-#include <string>
-
-struct Options {	
-	std::string filename;
-	search_terms_t to_find;
-};
-
 Options cmdopts(int argc, const char **argv);

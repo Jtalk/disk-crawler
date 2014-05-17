@@ -29,11 +29,14 @@
 #include <iostream>
 
 #include <cinttypes>
+#include <clocale>
 #include <cstring>
 
 static const char *const USAGE = "Usage: %s OPTIONS DEVICE TO_FIND\n\
 OPTIONS:\n\
 	\t-v|--verbose: verbose output\n\
+	\t-e|--encodings: encodings to convert string to [system locale encoding is default]\n\
+	\t\tExample: --encodings='utf8,cp1251'\n\
 ";
 static const size_t POSITION_OFFSET = 10;
 
@@ -86,22 +89,24 @@ void output(const SignatureWalker::results_t &results, const search_terms_t &to_
 	}
 }
 
-Status walk(const string &filename, const search_terms_t &to_find, SignatureWalker::results_t &results) {
+Status walk(Options &opts, SignatureWalker::results_t &results) {
 	SignatureWalker::walkers_t walkers;
 
-	auto plain = new PlainWalker(filename);
+	utility::encode(opts);
+	
+	auto plain = new PlainWalker(opts.filename);
 	if (not plain->operator!()) {
 		walkers.push_back(plain);
 	} else {
 		delete plain;
-		logger()->warning("Access Denied at %s", filename.c_str());
+		logger()->warning("Access Denied at %s", opts.filename.c_str());
 		return ACCESS_DENIED;
 	}
 
-	walkers.splice(walkers.end(), fspick(filename));
+	walkers.splice(walkers.end(), fspick(opts.filename));
 
 	for (auto walker : walkers) {
-		auto && found = walker->find(to_find);
+		auto && found = walker->find(opts.to_find);
 		if (not found.empty()) {
 			SignatureWalker::merge(results, found);
 		} else {
@@ -118,6 +123,8 @@ Status walk(const string &filename, const search_terms_t &to_find, SignatureWalk
 }
 
 int main(int argc, char *argv[]) {
+	setlocale(LC_ALL, ""); // Setting global OS locale as default
+	
 	if (argc < 3) {
 		printf(USAGE, argv[0]);
 		return NOT_ENOUGH_ARGUMENTS;
@@ -129,7 +136,7 @@ int main(int argc, char *argv[]) {
 	Options opts = cmdopts(argc, (const char**)argv);
 
 	SignatureWalker::results_t found;
-	auto status = walk(opts.filename, opts.to_find, found);
+	auto status = walk(opts, found);
 
 	if (status != SUCCESS) {
 		return status;

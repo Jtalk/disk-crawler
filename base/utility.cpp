@@ -24,7 +24,12 @@
 #include "ExtFileStream.h"
 #include "FATFileStream.h"
 
-#include <locale>
+#include <iconv.h>
+
+#include <clocale>
+#include <cctype>
+
+using namespace std;
 
 namespace utility {
 
@@ -164,6 +169,118 @@ found_offsets_t find(ByteReader &stream, const search_terms_t &to_find, size_t ,
 	}
 
 	return results;
+}
+
+struct EncConverter {
+	iconv_t converter;
+	const string *target_enc;
+};
+typedef std::list<EncConverter> converters_t;
+
+string enc_filter(const string &raw) {
+	string output;
+	for (auto &value : raw) {
+		if (value == '.') {
+			output.clear();
+		} else if (isalnum(value)) {
+			output.push_back(value);
+		}
+	}
+	return raw;
+}
+
+converters_t enc_make_converters(const string &from, const encodings_t &to) {
+	converters_t converters;
+	for (const auto &encoding : to) {
+		EncConverter c;
+		auto filtered = enc_filter(encoding);
+		c.converter = iconv_open(filtered.c_str(), from.c_str());
+		if (c.converter == iconv_t(-1)) {
+			if (errno == EINVAL) {
+				logger()->warning("Conversion from %s to %s is not supported by this platform\'s iconv library", from.c_str(), encoding.c_str());
+			} else {
+				logger()->warning("Unknown error %d while converting encoding from %s to %s", errno, from.c_str(), encoding.c_str());				
+			}
+		} else {
+			c.target_enc = &encoding;
+			logger()->debug("Adding converter for %s", filtered.c_str());
+			converters.push_back(c);
+		}
+	}
+	return converters;
+}
+
+byte_array_t enc_convert(const EncConverter &converter, const byte_array_t &source) {
+	size_t source_size = source.size();
+	size_t dest_size = source.size() * 5;
+	byte_array_t result(dest_size, 0); // For UTF-32 to be stored completely
+	
+	char *in = (char*)source.c_str();
+	char *out = (char*)&result[0];
+	// We can now use basic_string as contiguous storage array as it's required by C++ 2011 standard on which this library
+	// is highly rely. We can also convert to char* freely as C++ 2003+ standard declares char as one-byte type.
+	auto status = iconv(converter.converter, &in, &source_size, &out, &dest_size);
+	
+	if (status == size_t(-1)) {
+		switch (errno) {
+		case E2BIG:
+			logger()->warning("Not enough buffer size to convert %s to %s encoding, please, report this to developers", 
+				(const char*)source.c_str(), converter.target_enc->c_str());
+			break;
+		case EILSEQ:
+			logger()->warning("Invalid multibyte sequence %s inputed, please, report this to developers", (const char*)source.c_str());
+			break;
+		default:
+			logger()->warning("Unknown error %u while converting %s to encoding %s", errno, (const char*)source.c_str(), converter.target_enc->c_str());
+			break;
+		}
+		return {};
+	} else {
+		result.resize(out - (char*)&result[0]);
+		return result;
+	}
+}
+
+void enc_clear_converters(converters_t &converters) {
+	for (auto &converter : converters) {
+		iconv_close(converter.converter);
+	}
+}
+
+string enc_get_local() {
+	string current_locale = setlocale(LC_ALL, nullptr);
+	return enc_filter(current_locale);
+}
+
+void encode(Options &opts) {
+	if (opts.encodings.empty()) {
+		return;
+	}
+	
+	auto current_enc = enc_get_local();
+	
+	if (current_enc.empty()) {
+		logger()->warning("Invalid system locale %s, please, report this to developers", setlocale(LC_ALL, nullptr));
+		return;
+	}
+	
+	auto converters = enc_make_converters(current_enc, opts.encodings);
+	opts.to_find.reserve(opts.to_find.size() * (converters.size() + 1));
+	
+	for (const auto &term : opts.to_find) {
+		size_t i = 0;
+		for (const auto &converter : converters) {
+			auto result = enc_convert(converter, term);
+			if (result.empty()) {
+				logger()->warning("Invalid conversion for string %s from %s to %s", (char*)term.c_str(), current_enc.c_str(), converter.target_enc->c_str());
+			} else {
+				opts.to_find.push_back(result);
+			}
+			++i;
+		}
+	}
+	
+	enc_clear_converters(converters);
 }
 
 }

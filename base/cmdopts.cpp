@@ -19,11 +19,27 @@
 #include "cmdopts.h"
 
 #include "Config.h"
+#include "Log.h"
+
+#include <sstream>
 
 #include <cstring>
 
+using namespace std;
+
+static const char ENCODINGS_DELIMITER = ',';
+	
+static encodings_t split(const string &str, char delim) {
+	stringstream ss(str);
+	string current;
+	encodings_t items;
+	while (getline(ss, current, delim)) {
+		items.push_front(current);
+	}
+	return items;
+}
+
 Options cmdopts(int argc, const char **argv) {
-	using namespace std;
 	
 	Options options;
 	options.filename = argv[1];
@@ -34,6 +50,23 @@ Options cmdopts(int argc, const char **argv) {
 		
 		if (value == "-v" or value == "--verbose") {
 			config()->VERBOSE = true;
+			continue;
+		}
+		
+		
+		if (value == "-e") {
+			if (i == argc - 1) {
+				logger()->warning("Invalid option -e: no encodings list provided");
+			}
+			string encodings_raw(argv[++i]);
+			options.encodings = split(encodings_raw, ENCODINGS_DELIMITER);
+			continue;			
+		}
+		
+		static const char *ENCODINGS = "--encodings=";
+		if (value.substr(0, sizeof(ENCODINGS)) == ENCODINGS) {
+			string encodings_raw = value.substr(sizeof(ENCODINGS));
+			options.encodings = split(encodings_raw, ENCODINGS_DELIMITER);
 			continue;
 		}
 		
