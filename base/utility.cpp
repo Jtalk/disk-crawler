@@ -33,6 +33,14 @@ using namespace std;
 
 namespace utility {
 
+template<class T>
+void merge(T &dest, const T &src) {
+	auto insert = back_inserter<T>(dest);
+	for (auto &i : src) {
+		*(insert++) = i;
+	}
+}
+	
 size_t str_find(const Buffer &string, const byte_array_t &substr) {
 	byte_array_t array(string.cbegin(), string.size());
 
@@ -106,7 +114,7 @@ SignatureWalker *walker(const std::string &fs, std::string &device_name, size_t 
 size_t overlap_size(const search_terms_t &to_find) {
 	size_t size = 0;
 	for (const auto &term : to_find) {
-		size = std::max(size, term.size());
+		size = std::max(size, term.pattern.size());
 	}
 	return size;
 }
@@ -135,7 +143,7 @@ found_offsets_t find(ByteReader &stream, const search_terms_t &to_find, size_t ,
 		for (const auto &pattern : to_find) {
 			size_t in_buffer_offset = 0;
 			do {
-				size_t found_pos = utility::str_find(buffer, pattern);
+				size_t found_pos = utility::str_find(buffer, pattern.pattern);
 				
 				if (found_pos == Buffer::npos) {
 					break;
@@ -147,9 +155,9 @@ found_offsets_t find(ByteReader &stream, const search_terms_t &to_find, size_t ,
 					callback((pos + in_buffer_offset) * 100 * 1);
 				}
 				
-				buffer.move_front(found_pos + pattern.length());
+				buffer.move_front(found_pos + pattern.pattern.length());
 				results.push_back({pattern_n, pos + in_buffer_offset});
-				in_buffer_offset += pattern.length();
+				in_buffer_offset += pattern.pattern.length();
 			} while (true);
 			
 			buffer.reset_offset();
@@ -182,11 +190,11 @@ string enc_filter(const string &raw) {
 	for (auto &value : raw) {
 		if (value == '.') {
 			output.clear();
-		} else if (isalnum(value)) {
-			output.push_back(value);
+		} else if (isalnum(value) or value == '-') {
+			output.push_back(toupper(value));
 		}
 	}
-	return raw;
+	return output;
 }
 
 converters_t enc_make_converters(const string &from, const encodings_t &to) {
@@ -197,9 +205,9 @@ converters_t enc_make_converters(const string &from, const encodings_t &to) {
 		c.converter = iconv_open(filtered.c_str(), from.c_str());
 		if (c.converter == iconv_t(-1)) {
 			if (errno == EINVAL) {
-				logger()->warning("Conversion from %s to %s is not supported by this platform\'s iconv library", from.c_str(), encoding.c_str());
+				logger()->warning("Conversion from %s to %s (%s) is not supported by this platform\'s iconv library", from.c_str(), encoding.c_str(), filtered.c_str());
 			} else {
-				logger()->warning("Unknown error %d while converting encoding from %s to %s", errno, from.c_str(), encoding.c_str());				
+				logger()->warning("Unknown error %d while converting encoding from %s to %s (%s)", errno, from.c_str(), encoding.c_str(), filtered.c_str());				
 			}
 		} else {
 			c.target_enc = &encoding;
@@ -253,11 +261,15 @@ string enc_get_local() {
 }
 
 void encode(Options &opts) {
+	auto current_enc = enc_get_local();
+	
+	for (auto &i : opts.to_find) {
+		i.encoding = current_enc;
+	}
+	
 	if (opts.encodings.empty()) {
 		return;
 	}
-	
-	auto current_enc = enc_get_local();
 	
 	if (current_enc.empty()) {
 		logger()->warning("Invalid system locale %s, please, report this to developers", setlocale(LC_ALL, nullptr));
@@ -267,18 +279,21 @@ void encode(Options &opts) {
 	auto converters = enc_make_converters(current_enc, opts.encodings);
 	opts.to_find.reserve(opts.to_find.size() * (converters.size() + 1));
 	
-	for (const auto &term : opts.to_find) {
+	search_terms_t old = std::move(opts.to_find);
+	opts.to_find.clear();
+	for (const auto &term : old) {
 		size_t i = 0;
 		for (const auto &converter : converters) {
-			auto result = enc_convert(converter, term);
+			auto result = enc_convert(converter, term.pattern);
 			if (result.empty()) {
-				logger()->warning("Invalid conversion for string %s from %s to %s", (char*)term.c_str(), current_enc.c_str(), converter.target_enc->c_str());
+				logger()->warning("Invalid conversion for string %s from %s to %s", (char*)term.pattern.c_str(), current_enc.c_str(), converter.target_enc->c_str());
 			} else {
-				opts.to_find.push_back(result);
+				opts.to_find.push_back({result, *converter.target_enc});
 			}
 			++i;
 		}
 	}
+	merge(opts.to_find, old);
 	
 	enc_clear_converters(converters);
 }

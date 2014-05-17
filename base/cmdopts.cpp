@@ -63,14 +63,15 @@ Options cmdopts(int argc, const char **argv) {
 			continue;			
 		}
 		
-		static const char *ENCODINGS = "--encodings=";
-		if (value.substr(0, sizeof(ENCODINGS)) == ENCODINGS) {
-			string encodings_raw = value.substr(sizeof(ENCODINGS));
+		static const char ENCODINGS[] = "--encodings=";
+		auto substr = value.substr(0, sizeof(ENCODINGS) - 1);
+		if (substr == ENCODINGS) {
+			string encodings_raw = value.substr(sizeof(ENCODINGS) - 1);
 			options.encodings = split(encodings_raw, ENCODINGS_DELIMITER);
 			continue;
 		}
 		
-		options.to_find.push_back(byte_array_t((uint8_t*)argv[i], strlen(argv[i])));
+		options.to_find.push_back({byte_array_t((uint8_t*)argv[i], strlen(argv[i])), {}});
 	}
 	
 	return options;

@@ -80,7 +80,7 @@ void output(const SignatureWalker::results_t &results, const search_terms_t &to_
 			               "========================= Found: =========================\n"
 			               "%s\n"
 			               "==========================================================\n"
-			               "Position: %u, signature %s", (char*)buffer.begin(), found.offset, (char*)to_find[found.pattern_n].c_str());
+			               "Position: %u, signature %s", (char*)buffer.begin(), found.offset, (char*)to_find[found.pattern_n].pattern.c_str());
 
 			++counter;
 		}
