@@ -23,8 +23,9 @@ find_package(LibArchive REQUIRED)
 
 # Building final executable
 add_executable(crawler main.cpp)
-link_directories( ./build/base )
-target_link_libraries(crawler crawlerbase  ${LibArchive_LIBRARIES})
+
+target_link_libraries(crawler crawlerbase iconv ${LibArchive_LIBRARIES})
+
 install(TARGETS crawler RUNTIME DESTINATION bin)
 
 # Enabling testing capabilities of CMake

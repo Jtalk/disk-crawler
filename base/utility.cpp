@@ -24,7 +24,9 @@
 #include "ExtFileStream.h"
 #include "FATFileStream.h"
 
-#include <iconv.h>
+#include "/usr/local/include/iconv.h"
+
+#include <utility>
 
 #include <clocale>
 #include <cctype>
@@ -78,29 +80,6 @@ bool dump(ByteReader &reader, const std::string &filename) {
 	return true;
 }
 
-void sanitize(Buffer &buffer) {
-	using namespace std;
-	
-	Buffer tmp(buffer.size());
-	size_t last = 0;
-	
-	for (size_t i = 0; i < buffer.size(); i++) {
-		int character = buffer.cbegin()[i];
-		
-		if (character == 0) {
-			continue;
-		}
-		
-		if (isprint(character) or isspace(character) or iscntrl(character)) {
-			tmp.begin()[last++] = (uint8_t)character;
-		}
-	}
-	
-	tmp.begin()[last] = 0;
-	tmp.shrink(last + 1);
-	buffer.exchange(tmp);
-}
-
 SignatureWalker *walker(const std::string &fs, std::string &device_name, size_t size, const progress_callback_t &callback) {
 	if (fs.substr(0, 3) == "ext") {
 		return new FSWalker<ExtFileStream>(device_name, size, callback);
@@ -149,6 +128,8 @@ found_offsets_t find(ByteReader &stream, const search_terms_t &to_find, size_t ,
 					break;
 				}
 				
+				logger()->debug("Match for pattern %s N %u", (const char*)pattern.pattern.c_str(), pattern_n);
+				
 				in_buffer_offset += found_pos;
 				
 				if (callback) {
@@ -165,6 +146,8 @@ found_offsets_t find(ByteReader &stream, const search_terms_t &to_find, size_t ,
 			if (callback) {
 				callback((pos + read_bytes) * 100 * 1);
 			}
+			
+			++pattern_n;
                 }
                 
                 if (stream.eof()) {
@@ -185,7 +168,7 @@ struct EncConverter {
 };
 typedef std::list<EncConverter> converters_t;
 
-string enc_filter(const string &raw) {
+static string enc_filter(const string &raw) {
 	string output;
 	for (auto &value : raw) {
 		if (value == '.') {
@@ -197,19 +180,34 @@ string enc_filter(const string &raw) {
 	return output;
 }
 
-converters_t enc_make_converters(const string &from, const encodings_t &to) {
+static bool enc_make_converter(iconv_t &result, const string &from, const string &to) {
+	result = iconv_open(to.c_str(), from.c_str());
+	logger()->debug("Creating converter from %s to %s", from.c_str(), to.c_str());
+	if (result == iconv_t(-1)) {
+		if (errno == EINVAL) {
+			logger()->warning("Conversion from %s to %s is not supported by this platform\'s iconv library", from.c_str(), to.c_str());
+		} else {
+			logger()->warning("Unknown error %d while converting encoding from %s to %s", errno, from.c_str(), to.c_str());
+		}
+		return false;
+	} else {
+		return true;
+	}	
+}
+
+static converters_t enc_make_converters(const string &from, encodings_t &to) {
 	converters_t converters;
-	for (const auto &encoding : to) {
+	for (auto &encoding : to) {
 		EncConverter c;
 		auto filtered = enc_filter(encoding);
-		c.converter = iconv_open(filtered.c_str(), from.c_str());
-		if (c.converter == iconv_t(-1)) {
-			if (errno == EINVAL) {
-				logger()->warning("Conversion from %s to %s (%s) is not supported by this platform\'s iconv library", from.c_str(), encoding.c_str(), filtered.c_str());
-			} else {
-				logger()->warning("Unknown error %d while converting encoding from %s to %s (%s)", errno, from.c_str(), encoding.c_str(), filtered.c_str());				
-			}
-		} else {
+		if (filtered == from) {
+			continue;
+		}
+		
+		auto made = enc_make_converter(c.converter, from, filtered);
+		
+		if (made) {
+			encoding.swap(filtered);
 			c.target_enc = &encoding;
 			logger()->debug("Adding converter for %s", filtered.c_str());
 			converters.push_back(c);
@@ -218,10 +216,10 @@ converters_t enc_make_converters(const string &from, const encodings_t &to) {
 	return converters;
 }
 
-byte_array_t enc_convert(const EncConverter &converter, const byte_array_t &source) {
+static byte_array_t enc_convert(const EncConverter &converter, const byte_array_t &source) {
 	size_t source_size = source.size();
-	size_t dest_size = source.size() * 5;
-	byte_array_t result(dest_size, 0); // For UTF-32 to be stored completely
+	size_t dest_size = source.size() * 5; // For UTF-32 to be stored completely
+	byte_array_t result(dest_size, 0);
 	
 	char *in = (char*)source.c_str();
 	char *out = (char*)&result[0];
@@ -245,17 +243,20 @@ byte_array_t enc_convert(const EncConverter &converter, const byte_array_t &sour
 		return {};
 	} else {
 		result.resize(out - (char*)&result[0]);
+		
+		logger()->debug("Converted from %s to %s, destination enc %s, errno %u", (const char*)source.c_str(), (const char*)result.c_str(), converter.target_enc->c_str(), errno);
+		
 		return result;
 	}
 }
 
-void enc_clear_converters(converters_t &converters) {
+static void enc_clear_converters(converters_t &converters) {
 	for (auto &converter : converters) {
 		iconv_close(converter.converter);
 	}
 }
 
-string enc_get_local() {
+static string enc_get_local() {
 	string current_locale = setlocale(LC_ALL, nullptr);
 	return enc_filter(current_locale);
 }
@@ -284,6 +285,9 @@ void encode(Options &opts) {
 	for (const auto &term : old) {
 		size_t i = 0;
 		for (const auto &converter : converters) {
+			if (*converter.target_enc == current_enc) {
+				continue;
+			}
 			auto result = enc_convert(converter, term.pattern);
 			if (result.empty()) {
 				logger()->warning("Invalid conversion for string %s from %s to %s", (char*)term.pattern.c_str(), current_enc.c_str(), converter.target_enc->c_str());
@@ -296,6 +300,88 @@ void encode(Options &opts) {
 	merge(opts.to_find, old);
 	
 	enc_clear_converters(converters);
+}
+
+static void san_same_enc(Buffer &buffer) {
+	Buffer tmp(buffer.size());
+	size_t last = 0;
+	
+	for (size_t i = 0; i < buffer.size(); i++) {
+		int character = buffer.cbegin()[i];
+		
+		if (character == 0) {
+			continue;
+		}
+		
+		if (isprint(character) or isspace(character) or iscntrl(character)) {
+			tmp.begin()[last++] = (uint8_t)character;
+		}
+	}
+	
+	tmp.begin()[last] = 0;
+	tmp.shrink(last + 1);
+	buffer.exchange(tmp);	
+}
+
+bool san_try_encode(const EncConverter &c, Buffer &b) {
+	static const int ENABLE = 1;
+	iconvctl(c.converter, ICONV_SET_DISCARD_ILSEQ, (void*)&ENABLE);
+	
+	size_t source_size = b.size();
+	size_t dest_size = b.size() * 5; // For UTF-32 to be stored completely
+	Buffer result(dest_size);
+	
+	char *in = (char*)b.cbegin();
+	char *out = (char*)result.cbegin();	
+	// We can now use basic_string as contiguous storage array as it's required by C++ 2011 standard on which this library
+	// is highly rely. We can also convert to char* freely as C++ 2003+ standard declares char as one-byte type.
+	auto status = iconv(c.converter, &in, &source_size, &out, &dest_size);
+	
+	if (status == size_t(-1)) {
+		switch (errno) {
+		case E2BIG:
+			logger()->warning("Not enough buffer size to convert %s to %s encoding, please, report this to developers", 
+				(const char*)b.cbegin(), c.target_enc->c_str());
+			break;
+		case EILSEQ:
+			logger()->warning("Invalid multibyte sequence %s inputed, please, report this to developers", (const char*)b.cbegin());
+			break;
+		default:
+			logger()->warning("Unknown error %u while converting %s to encoding %s", errno, (const char*)b.cbegin(), c.target_enc->c_str());
+			break;
+		}
+		return false;
+	} else {
+		result.shrink(out - (char*)result.cbegin());
+		logger()->debug("Converted from %s to %s, destination enc %s, errno %u", (const char*)b.cbegin(), (const char*)result.cbegin(), c.target_enc->c_str(), errno);
+		b.exchange(result);
+		return true;
+	}
+}
+
+static bool san_diff_enc(Buffer &buffer, const string &system_enc, const string &encoding) {
+	EncConverter c;
+	auto made = enc_make_converter(c.converter, encoding, system_enc);
+	if (not made) {
+		return false;
+	}
+	c.target_enc = &system_enc;
+	bool success = san_try_encode(c, buffer);
+	converters_t converters = {c};
+	enc_clear_converters(converters);
+	return success;
+}
+
+bool sanitize(Buffer &buffer, const string &encoding) {
+	auto system_enc = enc_get_local();
+	if (system_enc == encoding) {
+		logger()->debug("Sanitizing system charset encoded buffer");
+		san_same_enc(buffer);
+		return true;
+	} else {
+		logger()->debug("Sanitizing other charset encoded buffer");
+		return san_diff_enc(buffer, system_enc, encoding);
+	}	
 }
 
 }

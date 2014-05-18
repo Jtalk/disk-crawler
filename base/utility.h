@@ -69,10 +69,10 @@ typedef std::list<SearchResult> found_offsets_t;
 
 size_t str_find(const Buffer &string, const byte_array_t &substr);
 bool dump(ByteReader &reader, const std::string &filename);
-void sanitize(Buffer &buffer);
 SignatureWalker *walker(const std::string &fs, std::string &device_name, size_t size, const progress_callback_t &callback);
 size_t overlap_size(const search_terms_t &to_find);
 void encode(Options &opts);
+bool sanitize(Buffer &buffer, const std::string &encoding);
 
 template<typename Target>
 inline Target to(const byte_array_t &bytes)

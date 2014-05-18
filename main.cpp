@@ -74,10 +74,11 @@ void output(const SignatureWalker::results_t &results, const search_terms_t &to_
 			
 			buffer.resize(buffer.size() + 1);
 			buffer.begin()[read] = 0;
-			
-			if (to_find[found.pattern_n].encoding == to_find.crbegin()->encoding) {
-				utility::sanitize(buffer);
-			} else {
+
+			bool encoded = utility::sanitize(buffer, to_find[found.pattern_n].encoding);
+			if (not encoded) {
+				logger()->debug("Encodings for pattern %u mismatches: %s for current and %s for environment", 
+					found.pattern_n, to_find[found.pattern_n].encoding.c_str(), to_find.crbegin()->encoding.c_str());
 				buffer.clear();
 				buffer.capture((uint8_t*)ENCODING_MISMATCH, sizeof(ENCODING_MISMATCH));
 			}
