@@ -82,12 +82,22 @@ void output(const SignatureWalker::results_t &results, const search_terms_t &to_
 				buffer.clear();
 				buffer.capture((uint8_t*)ENCODING_MISMATCH, sizeof(ENCODING_MISMATCH));
 			}
+			
+			Buffer pattern(to_find[found.pattern_n].pattern.size() + 1);
+			pattern.capture(to_find[found.pattern_n].pattern.c_str(), to_find[found.pattern_n].pattern.size() + 1);
+			encoded = utility::sanitize(pattern, to_find[found.pattern_n].encoding);
+			if (not encoded) {
+				logger()->debug("Encodings for pattern %u mismatches: %s for current and %s for environment", 
+					found.pattern_n, to_find[found.pattern_n].encoding.c_str(), to_find.crbegin()->encoding.c_str());
+				pattern.clear();
+				pattern.capture((uint8_t*)ENCODING_MISMATCH, sizeof(ENCODING_MISMATCH));				
+			}
 
 			logger()->info("\n"
 			               "========================= Found: =========================\n"
 			               "%s\n"
 			               "==========================================================\n"
-			               "Position: %u, signature %s", (char*)buffer.begin(), found.offset, (char*)to_find[found.pattern_n].pattern.c_str());
+			               "Position: %u, signature %s", (const char*)buffer.cbegin(), found.offset, (const char*)pattern.cbegin());
 
 			++counter;
 		}
