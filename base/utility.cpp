@@ -127,9 +127,7 @@ found_offsets_t find(ByteReader &stream, const search_terms_t &to_find, size_t ,
 				if (found_pos == Buffer::npos) {
 					break;
 				}
-				
-				logger()->debug("Match for pattern %s N %u", (const char*)pattern.pattern.c_str(), pattern_n);
-				
+								
 				in_buffer_offset += found_pos;
 				
 				if (callback) {
@@ -168,6 +166,30 @@ struct EncConverter {
 };
 typedef std::list<EncConverter> converters_t;
 
+static bool enc_is_utf(const string &name) {
+	return name.substr(0, 3) == "UTF" and name.size() > 3;
+}
+
+static bool enc_is_koi(const string &name) {
+	return name.substr(0, 3) == "KOI" and name.size() > 4;
+}
+
+static string enc_filter_utf(const string &name) {
+	if (name[3] == '-') {
+		return name;
+	} else {
+		return name.substr(0, 3) + "-" + name.substr(3);
+	}
+}
+
+static string enc_filter_koi(const string &name) {
+	if (name[4] == '-') {
+		return name;
+	} else {
+		return name.substr(0, 4) + "-" + name.substr(4);
+	}
+}
+
 static string enc_filter(const string &raw) {
 	string output;
 	for (auto &value : raw) {
@@ -176,6 +198,12 @@ static string enc_filter(const string &raw) {
 		} else if (isalnum(value) or value == '-') {
 			output.push_back(toupper(value));
 		}
+	}
+	if (enc_is_utf(output)) {
+		output = enc_filter_utf(output);
+	}
+	if (enc_is_koi(output)) {
+		output = enc_filter_koi(output);
 	}
 	return output;
 }
@@ -243,9 +271,6 @@ static byte_array_t enc_convert(const EncConverter &converter, const byte_array_
 		return {};
 	} else {
 		result.resize(out - (char*)&result[0]);
-		
-		logger()->debug("Converted from %s to %s, destination enc %s, errno %u", (const char*)source.c_str(), (const char*)result.c_str(), converter.target_enc->c_str(), errno);
-		
 		return result;
 	}
 }
@@ -353,7 +378,6 @@ bool san_try_encode(const EncConverter &c, Buffer &b) {
 		return false;
 	} else {
 		result.shrink(out - (char*)result.cbegin());
-		logger()->debug("Converted from %s to %s, destination enc %s, errno %u", (const char*)b.cbegin(), (const char*)result.cbegin(), c.target_enc->c_str(), errno);
 		b.exchange(result);
 		return true;
 	}
