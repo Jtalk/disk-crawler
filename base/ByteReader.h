@@ -1,6 +1,6 @@
 /*
-    Disk Crawler Library.
-    Copyright (C) 2013  Jtalk <me@jtalk.me>
+    Disk Crawler library.
+    Copyright (C) 2013-2014 Roman Nazarenko <me@jtalk.me>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ public:
 	static const streampos npos = streampos(-1);
 
 	ByteReader() = default;
-	ByteReader(const ByteReader& other) = default;
+	ByteReader(const ByteReader& other) = delete;
 	virtual ~ByteReader() 
 	{}
 
