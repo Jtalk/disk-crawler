@@ -98,9 +98,9 @@ size_t overlap_size(const search_terms_t &to_find) {
 	return size;
 }
 
-found_offsets_t find(ByteReader &stream, const search_terms_t &to_find, size_t , const progress_callback_t &callback)
+found_offsets_t find(ByteReader &stream, const search_terms_t &to_find, size_t size, const progress_callback_t &callback)
 {
-	if (!stream) {
+	if (not stream) {
 		return {};
 	}
 
@@ -112,7 +112,7 @@ found_offsets_t find(ByteReader &stream, const search_terms_t &to_find, size_t ,
 	DEBUG_ASSERT(0 == stream.tellg(), "Unable to set stream offset %u in utility::find", 0);
 
 	found_offsets_t results;
-	while (!stream.eof() && stream.tellg() != ByteReader::npos) {
+	while (not stream.eof() and stream.tellg() != ByteReader::npos) {
 		buffer.reset(BUFFER_SIZE);
 		auto pos = stream.tellg();
 		auto read_bytes = stream.read(buffer, BUFFER_SIZE);
@@ -131,7 +131,7 @@ found_offsets_t find(ByteReader &stream, const search_terms_t &to_find, size_t ,
 				in_buffer_offset += found_pos;
 				
 				if (callback) {
-					callback((pos + in_buffer_offset) * 100 * 1);
+					callback((pos + in_buffer_offset) * 100 / size);
 				}
 				
 				buffer.move_front(found_pos + pattern.pattern.length());
@@ -142,7 +142,7 @@ found_offsets_t find(ByteReader &stream, const search_terms_t &to_find, size_t ,
 			buffer.reset_offset();
 			
 			if (callback) {
-				callback((pos + read_bytes) * 100 * 1);
+				callback((pos + read_bytes) * 100 / size);
 			}
 			
 			++pattern_n;
