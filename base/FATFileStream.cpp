@@ -63,19 +63,19 @@ FATFileStream::FATFileStream(const std::string &device_name, streampos absolute_
 FATFileStream::~FATFileStream()
 {}
 
-FATFileStream::streampos FATFileStream::data_from_n(uint32_t number)
+FATFileStream::streampos FATFileStream::data_from_n(uint32_t number) const
 {
 	streampos in_data_offset = number * this->device.cluster_size;
 	return this->device.data_offset + in_data_offset;
 }
 
-FATFileStream::streampos FATFileStream::fat_from_n(uint32_t number)
+FATFileStream::streampos FATFileStream::fat_from_n(uint32_t number) const
 {
 	streampos in_fat_offset = number * this->device.fat_entry_size;
 	return this->device.fat_offset + in_fat_offset;
 }
 
-uint32_t FATFileStream::n_from_data(streampos offset)
+uint32_t FATFileStream::n_from_data(streampos offset) const
 {
 	if (offset < this->device.data_offset) {
 		logger()->warning("Invalid offset %u is converting into data cluster number", offset);
@@ -87,7 +87,7 @@ uint32_t FATFileStream::n_from_data(streampos offset)
 	return in_data_offset / this->device.cluster_size;
 }
 
-uint32_t FATFileStream::n_from_fat(streampos offset)
+uint32_t FATFileStream::n_from_fat(streampos offset) const
 {
 	if (offset < this->device.fat_offset or offset >= this->device.fat_offset * this->device.fat_size) {
 		logger()->warning("Invalid offset %u is converting into fat cluster number", offset);
