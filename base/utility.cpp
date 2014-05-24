@@ -327,19 +327,21 @@ void encode(Options &opts) {
 	enc_clear_converters(converters);
 }
 
-static void san_same_enc(Buffer &buffer) {
-	Buffer tmp(buffer.size());
+static void san_same_enc(Buffer &buffer, uint8_t placeholder) {
+	Buffer tmp(buffer.size() + 1);
 	size_t last = 0;
 	
 	for (size_t i = 0; i < buffer.size(); i++) {
 		int character = buffer.cbegin()[i];
 		
 		if (character == 0) {
-			continue;
+			break;
 		}
 		
 		if (isprint(character) or isspace(character) or iscntrl(character)) {
 			tmp.begin()[last++] = (uint8_t)character;
+		} else if (placeholder) {
+			tmp.begin()[last++] = (uint8_t)placeholder;
 		}
 	}
 	
@@ -396,11 +398,11 @@ static bool san_diff_enc(Buffer &buffer, const string &system_enc, const string 
 	return success;
 }
 
-bool sanitize(Buffer &buffer, const string &encoding) {
+bool sanitize(Buffer &buffer, const string &encoding, uint8_t placeholder) {
 	auto system_enc = enc_get_local();
 	if (system_enc == encoding) {
 		logger()->debug("Sanitizing system charset encoded buffer");
-		san_same_enc(buffer);
+		san_same_enc(buffer, placeholder);
 		return true;
 	} else {
 		logger()->debug("Sanitizing other charset encoded buffer");

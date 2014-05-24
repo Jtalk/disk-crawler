@@ -153,7 +153,7 @@ void ExtFileStream::init_blocks(streampos absolute_offset) {
 	
 	Bitmap blocks_bitmap = this->read_group_bitmap(desc.blocks_bitmap);
 	
-	if (offsets.block_n_group_relative >= blocks_bitmap.size()) {
+	if (offsets.block_n_group_relative + 1 >= blocks_bitmap.size()) {
 		this->is_correct = false;
 		return;
 	}
